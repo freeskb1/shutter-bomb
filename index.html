@@ -1501,7 +1501,7 @@ function GameOverScreen({ photoGallery, resetGame, styles }) {
             letterSpacing: '-0.02em',
           }}
         >
-          오늘의 폭소
+          오늘의 셔터밤
         </div>
         <div style={{ fontSize: '13px', color: '#c5bfb0', lineHeight: '1.7' }}>
           한 판 끝! 점수·라운드는 알아서 카운트하세요<br />
@@ -1514,7 +1514,7 @@ function GameOverScreen({ photoGallery, resetGame, styles }) {
       {photoGallery.length > 0 && (
         <div style={styles.card}>
           <div style={{ ...styles.label, marginBottom: '6px' }}>
-            📸 폭소 갤러리 ({photoGallery.length})
+            📸 셔터밤 갤러리 ({photoGallery.length})
           </div>
           <div
             style={{
@@ -1675,7 +1675,7 @@ function ShareAllButton({ photoGallery }) {
       const shareData = {
         files,
         title: 'Shutter Bomb',
-        text: `📸 폭소 갤러리 ${photoGallery.length}장`,
+        text: `📸 셔터밤 갤러리 ${photoGallery.length}장`,
       };
       // 다중 파일 공유 가능 여부 확인
       if (navigator.canShare && navigator.canShare(shareData)) {
@@ -1689,7 +1689,7 @@ function ShareAllButton({ photoGallery }) {
         setStatus('sharing');
         await navigator.share({
           title: 'Shutter Bomb',
-          text: `📸 ${photoGallery.length}장의 폭소 사진!`,
+          text: `📸 ${photoGallery.length}장의 셔터밤 사진!`,
         });
         setStatus('');
         return;
