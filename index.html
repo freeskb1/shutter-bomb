@@ -6,16 +6,8 @@
   <meta name="theme-color" content="#0a0a08" />
   <title>Shutter Bomb</title>
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #0a0a08;
-      min-height: 100vh;
-      overscroll-behavior: none;
-    }
-    #root {
-      min-height: 100vh;
-    }
+    html, body { margin: 0; padding: 0; background: #0a0a08; min-height: 100vh; overscroll-behavior: none; }
+    #root { min-height: 100vh; }
   </style>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -324,8 +316,8 @@ const shuffle = (arr) => {
 // 실제 폭발 시점: safe ~ max 사이 랜덤
 // 미션 당 평균 ~8초 가정. 사용자 의도: 안전=한바퀴의 60~80%, 최대=한바퀴~두바퀴
 const TIME_BY_PLAYERS = {
-  3:  { safe: 40, max: 72 },
-  4:  { safe: 40, max: 72 },
+  3:  { safe: 24, max: 48 },
+  4:  { safe: 32, max: 56 },
   5:  { safe: 40, max: 72 },
   6:  { safe: 32, max: 88 },
   7:  { safe: 40, max: 104 },
@@ -435,16 +427,37 @@ function App() {
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+
+    // 4:3 비율로 크롭 (화면에 보이는 영역과 동일)
+    const TARGET_RATIO = 4 / 3;
+    const videoRatio = vw / vh;
+    let sx, sy, sWidth, sHeight;
+    if (videoRatio > TARGET_RATIO) {
+      // 비디오가 더 와이드 → 좌우 잘라냄
+      sHeight = vh;
+      sWidth = Math.round(vh * TARGET_RATIO);
+      sx = Math.round((vw - sWidth) / 2);
+      sy = 0;
+    } else {
+      // 비디오가 더 좁음 → 상하 잘라냄
+      sWidth = vw;
+      sHeight = Math.round(vw / TARGET_RATIO);
+      sx = 0;
+      sy = Math.round((vh - sHeight) / 2);
+    }
+
+    canvas.width = sWidth;
+    canvas.height = sHeight;
     const ctx = canvas.getContext('2d');
     // 셀카 모드면 화면처럼 미러로 저장
     if (facingMode === 'user') {
       ctx.translate(canvas.width, 0);
       ctx.scale(-1, 1);
     }
-    ctx.drawImage(video, 0, 0);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+    ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, sWidth, sHeight);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
     setPhoto(dataUrl);
     stopCamera();
 
@@ -1088,7 +1101,7 @@ function MissionScreen({
             letterSpacing: '0.2em',
           }}
         >
-          💣 BOMB HOLDER
+          💣 SHUTTER BOMB
         </div>
         <div
           style={{
@@ -1334,7 +1347,7 @@ function PhotoConfirmScreen({
           textAlign: 'center',
         }}
       >
-        💣 BOMB HOLDER
+        💣 SHUTTER BOMB
       </div>
 
       <div
@@ -1354,6 +1367,8 @@ function PhotoConfirmScreen({
           alt="taken"
           style={{
             width: '100%',
+            aspectRatio: '4/3',
+            objectFit: 'cover',
             borderRadius: '2px',
             border: '2px solid #fff21f',
             display: 'block',
