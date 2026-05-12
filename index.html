@@ -1387,33 +1387,29 @@ function GameOverScreen({ photoGallery, resetGame, styles }) {
 
       {photoGallery.length > 0 && (
         <div style={styles.card}>
-          <div style={{ ...styles.label, marginBottom: '12px' }}>
+          <div style={{ ...styles.label, marginBottom: '6px' }}>
             📸 폭소 갤러리 ({photoGallery.length})
+          </div>
+          <div
+            style={{
+              fontSize: '11px',
+              color: '#888',
+              marginBottom: '14px',
+              lineHeight: '1.5',
+            }}
+          >
+            ◆ 사진을 <span style={{ color: '#fff21f' }}>길게 눌러</span> 저장<br />
+            ◆ <span style={{ color: '#fff21f' }}>공유 버튼</span>으로 단톡/SNS에 바로
           </div>
           <div
             style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
-              gap: '8px',
+              gap: '10px',
             }}
           >
             {photoGallery.map((g, i) => (
-              <div key={i}>
-                <img
-                  src={g.photo}
-                  alt=""
-                  style={{
-                    width: '100%',
-                    aspectRatio: '1',
-                    objectFit: 'cover',
-                    borderRadius: '2px',
-                    border: '1px solid #2a2620',
-                  }}
-                />
-                <div style={{ fontSize: '9px', color: '#888', marginTop: '4px' }}>
-                  R{g.round} · {g.mission}
-                </div>
-              </div>
+              <PhotoCard key={i} g={g} index={i} />
             ))}
           </div>
         </div>
@@ -1421,6 +1417,108 @@ function GameOverScreen({ photoGallery, resetGame, styles }) {
 
       <button onClick={resetGame} className="yellow-btn" style={styles.btn}>
         ↻ 다시 시작
+      </button>
+    </div>
+  );
+}
+
+// ========== 갤러리 사진 카드 (저장/공유) ==========
+function PhotoCard({ g, index }) {
+  const [shareStatus, setShareStatus] = useState(''); // '', 'sharing', 'unsupported', 'error'
+
+  // base64 dataURL → File 객체 변환
+  const dataUrlToFile = async (dataUrl, filename) => {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    return new File([blob], filename, { type: blob.type });
+  };
+
+  const handleShare = async () => {
+    const filename = `shutter-bomb-${index + 1}.jpg`;
+    try {
+      // 1차 시도: 파일과 함께 공유 (Web Share API Level 2)
+      const file = await dataUrlToFile(g.photo, filename);
+      const shareData = {
+        files: [file],
+        title: 'Shutter Bomb',
+        text: `미션: ${g.mission}`,
+      };
+      // canShare로 파일 공유 가능 여부 확인 (iOS Safari, 최신 Android Chrome 지원)
+      if (navigator.canShare && navigator.canShare(shareData)) {
+        setShareStatus('sharing');
+        await navigator.share(shareData);
+        setShareStatus('');
+        return;
+      }
+      // 2차 시도: 텍스트만 공유 (파일 미지원 시)
+      if (navigator.share) {
+        setShareStatus('sharing');
+        await navigator.share({
+          title: 'Shutter Bomb',
+          text: `미션: ${g.mission}`,
+        });
+        setShareStatus('');
+        return;
+      }
+      // 3차: 공유 자체 미지원 → 다운로드 폴백
+      setShareStatus('unsupported');
+      const a = document.createElement('a');
+      a.href = g.photo;
+      a.download = filename;
+      a.click();
+      setTimeout(() => setShareStatus(''), 2000);
+    } catch (err) {
+      // 사용자가 공유 취소한 경우는 무시
+      if (err.name !== 'AbortError') {
+        console.error('Share failed', err);
+        setShareStatus('error');
+        setTimeout(() => setShareStatus(''), 2000);
+      } else {
+        setShareStatus('');
+      }
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ position: 'relative' }}>
+        <img
+          src={g.photo}
+          alt={g.mission}
+          style={{
+            width: '100%',
+            aspectRatio: '1',
+            objectFit: 'cover',
+            borderRadius: '2px',
+            border: '1px solid #2a2620',
+            display: 'block',
+          }}
+        />
+      </div>
+      <div style={{ fontSize: '9px', color: '#888', marginTop: '4px', minHeight: '12px' }}>
+        R{g.round} · {g.mission}
+      </div>
+      <button
+        onClick={handleShare}
+        style={{
+          width: '100%',
+          marginTop: '4px',
+          padding: '6px',
+          background: '#15130f',
+          color: '#fff21f',
+          border: '1px solid #2a2620',
+          borderRadius: '2px',
+          fontSize: '10px',
+          fontWeight: 700,
+          letterSpacing: '0.1em',
+          fontFamily: 'inherit',
+          cursor: 'pointer',
+        }}
+      >
+        {shareStatus === 'sharing' && '공유 중...'}
+        {shareStatus === 'unsupported' && '⬇ 다운로드'}
+        {shareStatus === 'error' && '⚠ 실패'}
+        {shareStatus === '' && '⬆ 공유'}
       </button>
     </div>
   );
