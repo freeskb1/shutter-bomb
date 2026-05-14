@@ -149,6 +149,11 @@ const MISSIONS = [
   { text: "사람 없이 놓인 가방", icon: "👜" },
   { text: "사람 없이 걸쳐진 겉옷", icon: "🧥" },
 
+  // ========== 발견: 공공 시설물 ==========
+  { text: "비상구 표시", icon: "🚪" },
+  { text: "아무 간판이나", icon: "🪧" },
+  { text: "소화기", icon: "🧯" },
+
   // 98 (반사된 모습) 삭제 → 섹션 통째로 사라짐
 
   // ========== 청각 (소리 기반) ==========
@@ -331,7 +336,7 @@ const DANGER_WARNING_MIN = 10;
 const DANGER_WARNING_MAX = 25;
 
 // 휴대폰 한 번 들 때마다 사용 가능한 스킵 개수
-const SKIPS_PER_HOLDER = 2;
+const SKIPS_PER_HOLDER = 1;
 
 // 안전 시간부터 최대 시간 사이 랜덤 폭발 시점 반환
 const getRoundDuration = (playerCount) => {
@@ -343,6 +348,7 @@ const getRoundDuration = (playerCount) => {
 function App() {
   const [phase, setPhase] = useState('setup'); // setup, ready, mission, photo, explode, gameover
   const [playerCount, setPlayerCount] = useState(5);
+  const [customTime, setCustomTime] = useState(null); // null이면 인원별 자동, 숫자면 그 초로 고정
   const [mission, setMission] = useState(null);
   // 폭탄 타이머: 게임 시작 시점에 한 번만 정해지고, 패스해도 리셋 안 됨
   const [bombFuseTotal, setBombFuseTotal] = useState(0); // 이번 게임 폭탄 전체 시간(초)
@@ -352,6 +358,7 @@ function App() {
   const [photo, setPhoto] = useState(null);
   const [photoGallery, setPhotoGallery] = useState([]);
   const [skipsLeft, setSkipsLeft] = useState(0); // 휴대폰 든 사람 스킵 권 (받을 때마다 1로 충전)
+  const [prevMission, setPrevMission] = useState(null); // 스킵 직전 미션 (되돌리기용)
   const [missionQueue, setMissionQueue] = useState([]); // 셔플된 미션 큐. 한 판 동안 안 본 거 우선
   const [facingMode, setFacingMode] = useState('environment'); // 'environment'(후면) | 'user'(셀카)
 
@@ -531,8 +538,8 @@ function App() {
   };
 
   const startBomb = () => {
-    // 폭탄 점화: 인원수 기반으로 시간 결정
-    const dur = getRoundDuration(playerCount);
+    // 폭탄 점화: customTime이 있으면 그 시간 고정, 없으면 인원별 자동 랜덤
+    const dur = customTime != null ? customTime : getRoundDuration(playerCount);
     // 경고 시작 시점: 폭발 10~25초 전 랜덤. 단 폭탄 시간 자체보다는 짧게.
     const warningWindow = Math.min(
       randomInt(DANGER_WARNING_MIN, DANGER_WARNING_MAX),
@@ -564,30 +571,45 @@ function App() {
 
   const handleSkipMission = () => {
     // 미션 스킵: 사진 안 찍고 다른 미션 받음. 폭탄은 그대로 굴러감.
-    // 휴대폰 들고 있는 동안 SKIPS_PER_HOLDER번 가능. 패스하면 다음 사람이 다시 충전.
+    // 휴대폰 들고 있는 동안 1번만 가능. 패스하면 다음 사람이 다시 충전.
     if (skipsLeft <= 0) return;
     if (!mission) return;
     setSkipsLeft((s) => s - 1);
+    // 직전 미션 저장 (되돌리기용). 큐에 다시 넣지 않고 여기 보관.
+    setPrevMission(mission);
 
-    // 스킵된 미션은 누구도 도전 안 한 거니까 큐에 다시 넣음.
-    // 큐 중간 (3~10번째 위치) 어딘가에 랜덤하게 끼워서 곧 다시 나올 수도 있게.
+    // 새 미션 뽑기
     setMissionQueue((q) => {
       let queue = q;
       if (queue.length === 0) queue = shuffle(MISSIONS);
       const head = queue[0];
-      let rest = queue.slice(1);
-      const insertAt = Math.min(rest.length, randomInt(3, 10));
-      rest = [...rest.slice(0, insertAt), mission, ...rest.slice(insertAt)];
+      const rest = queue.slice(1);
       setMission(head);
       return rest;
+    });
+  };
+
+  const handleRevertSkip = () => {
+    // 스킵 되돌리기: 원래 미션으로 복귀. 스킵권은 복구 안 됨 (이미 소진).
+    // 새로 받았던 미션은 큐 중간에 다시 끼워넣음 (다른 사람이 받을 수 있게).
+    if (!prevMission) return;
+    const skippedNew = mission;
+    setMission(prevMission);
+    setPrevMission(null);
+    setMissionQueue((q) => {
+      let queue = q;
+      if (queue.length === 0) queue = shuffle(MISSIONS);
+      const insertAt = Math.min(queue.length, randomInt(3, 10));
+      return [...queue.slice(0, insertAt), skippedNew, ...queue.slice(insertAt)];
     });
   };
 
   const handlePass = () => {
     // 통과 누르면 바로 다음 미션. 옆 사람한테 휴대폰 넘기는 건 사용자가 알아서.
     // 폭탄은 리셋 안 됨, 계속 굴러간다.
-    // 새로 받는 사람은 스킵 다시 충전.
+    // 새로 받는 사람은 스킵 다시 충전. 되돌리기 상태도 초기화.
     setSkipsLeft(SKIPS_PER_HOLDER);
+    setPrevMission(null);
     drawNextMission();
     setPhoto(null);
     setPhase('mission');
@@ -621,6 +643,7 @@ function App() {
     setPhase('setup');
     setPhotoGallery([]);
     setSkipsLeft(0);
+    setPrevMission(null);
     setMissionQueue([]);
     setFacingMode('environment');
   };
@@ -824,6 +847,8 @@ function App() {
           <SetupScreen
             playerCount={playerCount}
             setPlayerCount={setPlayerCount}
+            customTime={customTime}
+            setCustomTime={setCustomTime}
             startGame={startGame}
             styles={styles}
           />
@@ -842,6 +867,8 @@ function App() {
             isDanger={isDanger}
             skipsLeft={skipsLeft}
             handleSkipMission={handleSkipMission}
+            prevMission={prevMission}
+            handleRevertSkip={handleRevertSkip}
             handleForceEnd={handleForceEnd}
             videoRef={videoRef}
             canvasRef={canvasRef}
@@ -888,7 +915,7 @@ function App() {
 }
 
 // ========== 셋업 화면 ==========
-function SetupScreen({ playerCount, setPlayerCount, startGame, styles }) {
+function SetupScreen({ playerCount, setPlayerCount, customTime, setCustomTime, startGame, styles }) {
   const dec = () => setPlayerCount((n) => Math.max(3, n - 1));
   const inc = () => setPlayerCount((n) => Math.min(10, n + 1));
 
@@ -908,7 +935,7 @@ function SetupScreen({ playerCount, setPlayerCount, startGame, styles }) {
           4. 폭탄이 <span style={{ color: '#d6181a' }}>계속 타들어감</span> — 언제 터질지 모름<br />
           5. 들고 있는 순간 터지면 그 사람이 폭탄 맞음<br />
           6. 셀카 미션이면 카메라 화면의 <span style={{ color: '#fff21f' }}>🔄</span> 버튼으로 전면 전환<br />
-          7. 도저히 못 깰 미션이면 <span style={{ color: '#fff21f' }}>스킵</span> 2번까지 (휴대폰 받을 때마다 충전)<br />
+          7. 못 깰 미션이면 <span style={{ color: '#fff21f' }}>스킵</span> 1번 — 새 미션도 별로면 <span style={{ color: '#fff21f' }}>되돌리기</span> 가능<br />
           <span style={{ color: '#fff21f' }}>━ 한 판당 폭탄 한 번. 점수·라운드는 폰 밖에서 알아서 카운트!</span>
         </div>
         <div
@@ -1008,9 +1035,123 @@ function SetupScreen({ playerCount, setPlayerCount, startGame, styles }) {
         </div>
       </div>
 
+      <TimeSettingCard customTime={customTime} setCustomTime={setCustomTime} styles={styles} />
+
       <button onClick={startGame} className="yellow-btn" style={styles.btn}>
         ▶ 게임 시작
       </button>
+    </div>
+  );
+}
+
+// ========== 시간 설정 카드 ==========
+function TimeSettingCard({ customTime, setCustomTime, styles }) {
+  const isCustom = customTime != null;
+  const [inputValue, setInputValue] = useState('60');
+
+  const applyCustom = (val) => {
+    const n = parseInt(val, 10);
+    if (isNaN(n) || n < 5) {
+      setCustomTime(null);
+      return;
+    }
+    setCustomTime(Math.min(n, 600)); // 최대 10분
+  };
+
+  return (
+    <div style={styles.card}>
+      <div style={{ ...styles.label, marginBottom: '12px', textAlign: 'center' }}>
+        폭탄 시간
+      </div>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: isCustom ? '12px' : '0' }}>
+        <button
+          onClick={() => setCustomTime(null)}
+          style={{
+            flex: 1,
+            padding: '12px 8px',
+            background: !isCustom ? '#fff21f' : '#0a0a08',
+            color: !isCustom ? '#0a0a08' : '#888',
+            border: !isCustom ? 'none' : '1px solid #2a2620',
+            borderRadius: '2px',
+            fontSize: '12px',
+            fontWeight: 700,
+            fontFamily: 'inherit',
+            cursor: 'pointer',
+            letterSpacing: '0.05em',
+          }}
+        >
+          자동 (인원별)
+        </button>
+        <button
+          onClick={() => applyCustom(inputValue)}
+          style={{
+            flex: 1,
+            padding: '12px 8px',
+            background: isCustom ? '#fff21f' : '#0a0a08',
+            color: isCustom ? '#0a0a08' : '#888',
+            border: isCustom ? 'none' : '1px solid #2a2620',
+            borderRadius: '2px',
+            fontSize: '12px',
+            fontWeight: 700,
+            fontFamily: 'inherit',
+            cursor: 'pointer',
+            letterSpacing: '0.05em',
+          }}
+        >
+          직접 입력
+        </button>
+      </div>
+
+      {isCustom && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            animation: 'fade-in 0.2s',
+          }}
+        >
+          <input
+            type="number"
+            inputMode="numeric"
+            value={inputValue}
+            min={5}
+            max={600}
+            onChange={(e) => setInputValue(e.target.value)}
+            onBlur={() => applyCustom(inputValue)}
+            style={{
+              flex: 1,
+              background: '#0a0a08',
+              border: '1px solid #fff21f',
+              borderRadius: '2px',
+              padding: '10px 12px',
+              color: '#fff21f',
+              fontFamily: 'inherit',
+              fontSize: '18px',
+              fontWeight: 700,
+              textAlign: 'center',
+              boxSizing: 'border-box',
+            }}
+          />
+          <span style={{ fontSize: '13px', color: '#c5bfb0', minWidth: '60px' }}>
+            초에 터짐
+          </span>
+        </div>
+      )}
+
+      <div
+        style={{
+          fontSize: '10px',
+          color: '#666',
+          textAlign: 'center',
+          marginTop: '10px',
+          lineHeight: '1.5',
+        }}
+      >
+        {isCustom
+          ? `정확히 ${customTime}초 후 터집니다 (긴장감은 ↓)`
+          : '인원수에 맞춰 랜덤 시간 — 언제 터질지 모름'}
+      </div>
     </div>
   );
 }
@@ -1063,6 +1204,8 @@ function MissionScreen({
   isDanger,
   skipsLeft,
   handleSkipMission,
+  prevMission,
+  handleRevertSkip,
   handleForceEnd,
   videoRef,
   canvasRef,
@@ -1079,6 +1222,7 @@ function MissionScreen({
   };
 
   const canSkip = skipsLeft > 0;
+  const canRevert = !!prevMission; // 스킵을 한 상태면 되돌리기 가능
 
   return (
     <div
@@ -1106,12 +1250,14 @@ function MissionScreen({
         <div
           style={{
             fontSize: '10px',
-            color: canSkip ? '#fff21f' : '#444',
+            color: canSkip ? '#fff21f' : '#666',
             letterSpacing: '0.15em',
             fontWeight: 700,
           }}
         >
-          {canSkip ? `⤴ SKIP ×${skipsLeft}` : '⤴ SKIP 사용됨'}
+          {canSkip && '⤴ SKIP ×1'}
+          {!canSkip && canRevert && '↩ 되돌리기 가능'}
+          {!canSkip && !canRevert && '⤴ SKIP 사용됨'}
         </div>
       </div>
 
@@ -1200,19 +1346,34 @@ function MissionScreen({
       </div>
 
       <div style={{ display: 'flex', gap: '8px' }}>
-        <button
-          onClick={handleSkipMission}
-          disabled={!canSkip}
-          style={{
-            ...styles.btn,
-            ...styles.btnGhost,
-            flex: 1,
-            opacity: canSkip ? 1 : 0.35,
-            cursor: canSkip ? 'pointer' : 'not-allowed',
-          }}
-        >
-          ⤴ 스킵
-        </button>
+        {canRevert ? (
+          <button
+            onClick={handleRevertSkip}
+            style={{
+              ...styles.btn,
+              ...styles.btnGhost,
+              flex: 1,
+              color: '#fff21f',
+              borderColor: '#fff21f',
+            }}
+          >
+            ↩ 되돌리기
+          </button>
+        ) : (
+          <button
+            onClick={handleSkipMission}
+            disabled={!canSkip}
+            style={{
+              ...styles.btn,
+              ...styles.btnGhost,
+              flex: 1,
+              opacity: canSkip ? 1 : 0.35,
+              cursor: canSkip ? 'pointer' : 'not-allowed',
+            }}
+          >
+            ⤴ 스킵
+          </button>
+        )}
         <button
           onClick={handleShutter}
           className="yellow-btn"
