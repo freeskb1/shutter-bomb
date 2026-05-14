@@ -916,8 +916,48 @@ function App() {
 
 // ========== 셋업 화면 ==========
 function SetupScreen({ playerCount, setPlayerCount, customTime, setCustomTime, startGame, styles }) {
+  // 탭: 'auto'(인원별 자동) | 'custom'(시간 직접)
+  const [tab, setTab] = useState(customTime != null ? 'custom' : 'auto');
+  const [inputValue, setInputValue] = useState(customTime != null ? String(customTime) : '60');
+
   const dec = () => setPlayerCount((n) => Math.max(3, n - 1));
   const inc = () => setPlayerCount((n) => Math.min(10, n + 1));
+
+  // 탭 전환
+  const selectAuto = () => {
+    setTab('auto');
+    setCustomTime(null);
+  };
+  const selectCustom = () => {
+    setTab('custom');
+    applyCustom(inputValue);
+  };
+
+  const applyCustom = (val) => {
+    const n = parseInt(val, 10);
+    if (isNaN(n) || n < 5) {
+      setCustomTime(5);
+      setInputValue('5');
+      return;
+    }
+    const clamped = Math.min(n, 600);
+    setCustomTime(clamped);
+    setInputValue(String(clamped));
+  };
+
+  const tabBtnStyle = (active) => ({
+    flex: 1,
+    padding: '12px 8px',
+    background: active ? '#fff21f' : '#0a0a08',
+    color: active ? '#0a0a08' : '#888',
+    border: active ? 'none' : '1px solid #2a2620',
+    borderRadius: '2px',
+    fontSize: '13px',
+    fontWeight: 700,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+    letterSpacing: '0.05em',
+  });
 
   return (
     <div style={{ animation: 'fade-in 0.4s' }}>
@@ -952,206 +992,154 @@ function SetupScreen({ playerCount, setPlayerCount, customTime, setCustomTime, s
         </div>
       </div>
 
+      {/* 폭탄 시간 설정 카드 (탭 위, 내용 아래) */}
       <div style={styles.card}>
-        <div
-          style={{
-            ...styles.label,
-            marginBottom: '16px',
-            textAlign: 'center',
-          }}
-        >
-          몇 명이서 할까?
+        <div style={{ ...styles.label, marginBottom: '12px', textAlign: 'center' }}>
+          폭탄 시간
         </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '20px',
-          }}
-        >
-          <button
-            onClick={dec}
-            disabled={playerCount <= 3}
-            style={{
-              width: '52px',
-              height: '52px',
-              borderRadius: '50%',
-              background: playerCount <= 3 ? '#1a1813' : '#fff21f',
-              color: playerCount <= 3 ? '#444' : '#0a0a08',
-              border: 'none',
-              fontSize: '28px',
-              fontWeight: 900,
-              cursor: playerCount <= 3 ? 'not-allowed' : 'pointer',
-              fontFamily: 'inherit',
-              boxShadow: playerCount <= 3 ? 'none' : '3px 3px 0 #d6181a',
-            }}
-          >
-            −
+
+        {/* 탭 */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+          <button onClick={selectAuto} style={tabBtnStyle(tab === 'auto')}>
+            인원별 자동
           </button>
-          <div
-            style={{
-              fontFamily: "'Bowlby One', serif",
-              fontSize: '64px',
-              color: '#fff21f',
-              textShadow: '4px 4px 0 #d6181a',
-              minWidth: '80px',
-              textAlign: 'center',
-              lineHeight: 1,
-            }}
-          >
-            {playerCount}
-          </div>
-          <button
-            onClick={inc}
-            disabled={playerCount >= 10}
-            style={{
-              width: '52px',
-              height: '52px',
-              borderRadius: '50%',
-              background: playerCount >= 10 ? '#1a1813' : '#fff21f',
-              color: playerCount >= 10 ? '#444' : '#0a0a08',
-              border: 'none',
-              fontSize: '28px',
-              fontWeight: 900,
-              cursor: playerCount >= 10 ? 'not-allowed' : 'pointer',
-              fontFamily: 'inherit',
-              boxShadow: playerCount >= 10 ? 'none' : '3px 3px 0 #d6181a',
-            }}
-          >
-            +
+          <button onClick={selectCustom} style={tabBtnStyle(tab === 'custom')}>
+            시간 직접
           </button>
         </div>
-        <div
-          style={{
-            fontSize: '10px',
-            color: '#666',
-            textAlign: 'center',
-            marginTop: '12px',
-            letterSpacing: '0.2em',
-          }}
-        >
-          3 ~ 10명
+
+        {/* 탭 내용 - 두 탭 동일한 높이감 */}
+        <div style={{ minHeight: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          {tab === 'auto' && (
+            <div style={{ animation: 'fade-in 0.2s' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '20px',
+                }}
+              >
+                <button
+                  onClick={dec}
+                  disabled={playerCount <= 3}
+                  style={{
+                    width: '52px',
+                    height: '52px',
+                    borderRadius: '50%',
+                    background: playerCount <= 3 ? '#1a1813' : '#fff21f',
+                    color: playerCount <= 3 ? '#444' : '#0a0a08',
+                    border: 'none',
+                    fontSize: '28px',
+                    fontWeight: 900,
+                    cursor: playerCount <= 3 ? 'not-allowed' : 'pointer',
+                    fontFamily: 'inherit',
+                    boxShadow: playerCount <= 3 ? 'none' : '3px 3px 0 #d6181a',
+                  }}
+                >
+                  −
+                </button>
+                <div
+                  style={{
+                    fontFamily: "'Bowlby One', serif",
+                    fontSize: '56px',
+                    color: '#fff21f',
+                    textShadow: '4px 4px 0 #d6181a',
+                    minWidth: '72px',
+                    textAlign: 'center',
+                    lineHeight: 1,
+                  }}
+                >
+                  {playerCount}
+                </div>
+                <button
+                  onClick={inc}
+                  disabled={playerCount >= 10}
+                  style={{
+                    width: '52px',
+                    height: '52px',
+                    borderRadius: '50%',
+                    background: playerCount >= 10 ? '#1a1813' : '#fff21f',
+                    color: playerCount >= 10 ? '#444' : '#0a0a08',
+                    border: 'none',
+                    fontSize: '28px',
+                    fontWeight: 900,
+                    cursor: playerCount >= 10 ? 'not-allowed' : 'pointer',
+                    fontFamily: 'inherit',
+                    boxShadow: playerCount >= 10 ? 'none' : '3px 3px 0 #d6181a',
+                  }}
+                >
+                  +
+                </button>
+              </div>
+              <div
+                style={{
+                  fontSize: '10px',
+                  color: '#666',
+                  textAlign: 'center',
+                  marginTop: '14px',
+                  lineHeight: '1.5',
+                }}
+              >
+                {playerCount}명 — 인원수에 맞춰 랜덤 시간<br />
+                언제 터질지 모름
+              </div>
+            </div>
+          )}
+
+          {tab === 'custom' && (
+            <div style={{ animation: 'fade-in 0.2s' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                }}
+              >
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={inputValue}
+                  min={5}
+                  max={600}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onBlur={() => applyCustom(inputValue)}
+                  style={{
+                    width: '120px',
+                    background: '#0a0a08',
+                    border: '1px solid #fff21f',
+                    borderRadius: '2px',
+                    padding: '14px 12px',
+                    color: '#fff21f',
+                    fontFamily: "'Bowlby One', serif",
+                    fontSize: '32px',
+                    textAlign: 'center',
+                    boxSizing: 'border-box',
+                  }}
+                />
+                <span style={{ fontSize: '15px', color: '#c5bfb0' }}>초에 터짐</span>
+              </div>
+              <div
+                style={{
+                  fontSize: '10px',
+                  color: '#666',
+                  textAlign: 'center',
+                  marginTop: '14px',
+                  lineHeight: '1.5',
+                }}
+              >
+                정확히 {customTime != null ? customTime : inputValue}초 후 터집니다<br />
+                고정 시간이라 긴장감은 ↓
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
-      <TimeSettingCard customTime={customTime} setCustomTime={setCustomTime} styles={styles} />
 
       <button onClick={startGame} className="yellow-btn" style={styles.btn}>
         ▶ 게임 시작
       </button>
-    </div>
-  );
-}
-
-// ========== 시간 설정 카드 ==========
-function TimeSettingCard({ customTime, setCustomTime, styles }) {
-  const isCustom = customTime != null;
-  const [inputValue, setInputValue] = useState('60');
-
-  const applyCustom = (val) => {
-    const n = parseInt(val, 10);
-    if (isNaN(n) || n < 5) {
-      setCustomTime(null);
-      return;
-    }
-    setCustomTime(Math.min(n, 600)); // 최대 10분
-  };
-
-  return (
-    <div style={styles.card}>
-      <div style={{ ...styles.label, marginBottom: '12px', textAlign: 'center' }}>
-        폭탄 시간
-      </div>
-      <div style={{ display: 'flex', gap: '8px', marginBottom: isCustom ? '12px' : '0' }}>
-        <button
-          onClick={() => setCustomTime(null)}
-          style={{
-            flex: 1,
-            padding: '12px 8px',
-            background: !isCustom ? '#fff21f' : '#0a0a08',
-            color: !isCustom ? '#0a0a08' : '#888',
-            border: !isCustom ? 'none' : '1px solid #2a2620',
-            borderRadius: '2px',
-            fontSize: '12px',
-            fontWeight: 700,
-            fontFamily: 'inherit',
-            cursor: 'pointer',
-            letterSpacing: '0.05em',
-          }}
-        >
-          자동 (인원별)
-        </button>
-        <button
-          onClick={() => applyCustom(inputValue)}
-          style={{
-            flex: 1,
-            padding: '12px 8px',
-            background: isCustom ? '#fff21f' : '#0a0a08',
-            color: isCustom ? '#0a0a08' : '#888',
-            border: isCustom ? 'none' : '1px solid #2a2620',
-            borderRadius: '2px',
-            fontSize: '12px',
-            fontWeight: 700,
-            fontFamily: 'inherit',
-            cursor: 'pointer',
-            letterSpacing: '0.05em',
-          }}
-        >
-          직접 입력
-        </button>
-      </div>
-
-      {isCustom && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            animation: 'fade-in 0.2s',
-          }}
-        >
-          <input
-            type="number"
-            inputMode="numeric"
-            value={inputValue}
-            min={5}
-            max={600}
-            onChange={(e) => setInputValue(e.target.value)}
-            onBlur={() => applyCustom(inputValue)}
-            style={{
-              flex: 1,
-              background: '#0a0a08',
-              border: '1px solid #fff21f',
-              borderRadius: '2px',
-              padding: '10px 12px',
-              color: '#fff21f',
-              fontFamily: 'inherit',
-              fontSize: '18px',
-              fontWeight: 700,
-              textAlign: 'center',
-              boxSizing: 'border-box',
-            }}
-          />
-          <span style={{ fontSize: '13px', color: '#c5bfb0', minWidth: '60px' }}>
-            초에 터짐
-          </span>
-        </div>
-      )}
-
-      <div
-        style={{
-          fontSize: '10px',
-          color: '#666',
-          textAlign: 'center',
-          marginTop: '10px',
-          lineHeight: '1.5',
-        }}
-      >
-        {isCustom
-          ? `정확히 ${customTime}초 후 터집니다 (긴장감은 ↓)`
-          : '인원수에 맞춰 랜덤 시간 — 언제 터질지 모름'}
-      </div>
     </div>
   );
 }
