@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#0a0a08" />
+  <meta name="theme-color" content="#0d1117" />
   <title>Shutter Bomb</title>
   <style>
-    html, body { margin: 0; padding: 0; background: #0a0a08; min-height: 100vh; overscroll-behavior: none; }
+    html, body { margin: 0; padding: 0; background: #0d1117; min-height: 100vh; overscroll-behavior: none; }
     #root { min-height: 100vh; }
   </style>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -656,25 +656,21 @@ function App() {
     };
   }, [stopCamera]);
 
-  // ========== 스타일 ==========
+  // ========== 스타일 (시안 B: Stealth Mission HUD) ==========
+  // 팔레트: 차콜 + 형광 그린 (#39d353) + 위험 레드 (#f85149)
   const styles = {
     root: {
       minHeight: '100vh',
-      background: '#0a0a08',
-      color: '#f5f1e8',
-      fontFamily: "'JetBrains Mono', 'Courier New', monospace",
+      background: '#0d1117',
+      color: '#e6edf3',
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Pretendard', sans-serif",
       padding: '16px',
       position: 'relative',
       overflow: 'hidden',
     },
     grain: {
-      position: 'fixed',
-      inset: 0,
-      backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.9 0 0 0 0 0.8 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-      pointerEvents: 'none',
-      opacity: 0.5,
-      zIndex: 100,
-      mixBlendMode: 'overlay',
+      // 노이즈 제거 - 빈 div로 두지만 사용 안함 (호환성 위해 유지)
+      display: 'none',
     },
     container: {
       maxWidth: '440px',
@@ -684,98 +680,89 @@ function App() {
     },
     header: {
       textAlign: 'center',
-      padding: '16px 0 8px',
-      borderBottom: '2px dashed #2a2620',
-      marginBottom: '16px',
+      padding: '24px 0 16px',
+      marginBottom: '12px',
     },
     logo: {
-      fontSize: '28px',
-      fontWeight: 900,
-      letterSpacing: '-0.02em',
-      color: '#fff21f',
-      textShadow: '3px 3px 0 #d6181a',
-      transform: 'rotate(-2deg)',
+      fontSize: '24px',
+      fontWeight: 700,
+      letterSpacing: '0.15em',
+      color: '#e6edf3',
       display: 'inline-block',
+      textTransform: 'uppercase',
     },
     subtitle: {
-      fontSize: '11px',
-      color: '#888',
+      fontSize: '10px',
+      color: '#39d353',
       marginTop: '6px',
-      letterSpacing: '0.2em',
+      letterSpacing: '0.25em',
+      fontFamily: "'JetBrains Mono', 'Menlo', monospace",
+      fontWeight: 500,
     },
     card: {
-      background: '#15130f',
-      border: '1px solid #2a2620',
-      borderRadius: '4px',
-      padding: '20px',
+      background: '#161b22',
+      border: '0.5px solid #30363d',
+      borderRadius: '6px',
+      padding: '18px',
+      marginBottom: '12px',
+    },
+    cardAccent: {
+      // 미션 카드처럼 그린 액센트
+      background: '#0d1117',
+      border: '1px dashed #39d353',
+      borderRadius: '6px',
+      padding: '16px',
       marginBottom: '12px',
     },
     label: {
       fontSize: '10px',
       letterSpacing: '0.25em',
-      color: '#fff21f',
-      fontWeight: 700,
-      marginBottom: '4px',
+      color: '#39d353',
+      fontWeight: 500,
+      fontFamily: "'JetBrains Mono', 'Menlo', monospace",
+      textTransform: 'uppercase',
+    },
+    labelMuted: {
+      fontSize: '10px',
+      letterSpacing: '0.2em',
+      color: '#7d8590',
+      fontWeight: 500,
+      fontFamily: "'JetBrains Mono', 'Menlo', monospace",
     },
     input: {
       width: '100%',
-      background: '#0a0a08',
-      border: '1px solid #2a2620',
-      borderRadius: '2px',
-      padding: '10px 12px',
-      color: '#f5f1e8',
+      background: '#0d1117',
+      border: '1px solid #30363d',
+      borderRadius: '4px',
+      padding: '12px 14px',
+      color: '#e6edf3',
       fontFamily: 'inherit',
       fontSize: '14px',
       boxSizing: 'border-box',
     },
     btn: {
       width: '100%',
-      background: '#fff21f',
-      color: '#0a0a08',
+      background: '#39d353',
+      color: '#0d1117',
       border: 'none',
-      padding: '16px',
-      fontSize: '14px',
-      fontWeight: 900,
+      padding: '14px',
+      fontSize: '13px',
+      fontWeight: 700,
       letterSpacing: '0.15em',
-      fontFamily: 'inherit',
-      borderRadius: '2px',
+      fontFamily: "'JetBrains Mono', 'Menlo', monospace",
+      borderRadius: '4px',
       cursor: 'pointer',
       textTransform: 'uppercase',
-      boxShadow: '4px 4px 0 #d6181a',
-      transition: 'all 0.05s',
+      transition: 'all 0.1s',
     },
     btnDanger: {
-      background: '#d6181a',
-      color: '#fff',
-      boxShadow: '4px 4px 0 #fff21f',
+      background: '#f85149',
+      color: '#ffffff',
     },
     btnGhost: {
       background: 'transparent',
-      color: '#f5f1e8',
-      border: '1px solid #2a2620',
-      boxShadow: 'none',
-    },
-    fuseTrack: {
-      width: '100%',
-      height: '6px',
-      background: '#1a1815',
-      borderRadius: '3px',
-      overflow: 'hidden',
-      position: 'relative',
-    },
-    fuseFill: {
-      height: '100%',
-      background: 'linear-gradient(90deg, #d6181a 0%, #ff6b00 50%, #fff21f 100%)',
-      transition: 'width 0.1s linear',
-    },
-    stamp: {
-      display: 'inline-block',
-      padding: '4px 8px',
-      border: '2px solid currentColor',
-      fontSize: '10px',
-      fontWeight: 900,
-      letterSpacing: '0.2em',
-      transform: 'rotate(-3deg)',
+      color: '#7d8590',
+      border: '1px solid #30363d',
     },
   };
 
@@ -784,10 +771,18 @@ function App() {
   const bombActive = phase === 'mission' || phase === 'photo';
   const showDangerOverlay = bombActive && isDanger;
 
+  // 카메라/사진 화면일 때는 페이지 패딩과 컨테이너 max-width 해제 (라이브뷰 풀폭)
+  const rootStyle = bombActive
+    ? { ...styles.root, padding: '0' }
+    : styles.root;
+  const containerStyle = bombActive
+    ? { ...styles.container, maxWidth: '100%' }
+    : styles.container;
+
   return (
-    <div style={styles.root}>
+    <div style={rootStyle}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Bowlby+One&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&family=Pretendard:wght@400;500;700;900&display=swap');
         @keyframes pulse-bomb {
           0%, 100% { transform: scale(1); }
           50% { transform: scale(1.06); }
@@ -809,9 +804,9 @@ function App() {
           to { opacity: 1; transform: translateY(0); }
         }
         @keyframes flash-red {
-          0% { background: #0a0a08; }
-          50% { background: #d6181a; }
-          100% { background: #0a0a08; }
+          0% { background: #0d1117; }
+          50% { background: #f85149; }
+          100% { background: #0d1117; }
         }
         @keyframes danger-pulse {
           0%, 100% { opacity: 0.2; }
@@ -821,9 +816,13 @@ function App() {
           0%, 49% { opacity: 1; }
           50%, 100% { opacity: 0.3; }
         }
-        button:active { transform: translate(2px, 2px); }
-        .yellow-btn:active { box-shadow: 2px 2px 0 #d6181a !important; }
-        .red-btn:active { box-shadow: 2px 2px 0 #fff21f !important; }
+        @keyframes scanline {
+          0% { transform: translateY(-100%); }
+          100% { transform: translateY(100vh); }
+        }
+        button { transition: opacity 0.1s, transform 0.1s; }
+        button:active:not(:disabled) { transform: scale(0.97); }
+        button:disabled { cursor: not-allowed; }
       `}</style>
 
       <div style={styles.grain} />
@@ -834,7 +833,7 @@ function App() {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'radial-gradient(ellipse at center, transparent 30%, rgba(214, 24, 26, 0.6) 100%)',
+            background: 'radial-gradient(ellipse at center, transparent 30%, rgba(248, 81, 73, 0.55) 100%)',
             pointerEvents: 'none',
             zIndex: 50,
             animation: 'danger-pulse 0.6s ease-in-out infinite',
@@ -842,7 +841,7 @@ function App() {
         />
       )}
 
-      <div style={styles.container}>
+      <div style={containerStyle}>
         {phase === 'setup' && (
           <SetupScreen
             playerCount={playerCount}
@@ -923,7 +922,6 @@ function SetupScreen({ playerCount, setPlayerCount, customTime, setCustomTime, s
   const dec = () => setPlayerCount((n) => Math.max(3, n - 1));
   const inc = () => setPlayerCount((n) => Math.min(10, n + 1));
 
-  // 탭 전환
   const selectAuto = () => {
     setTab('auto');
     setCustomTime(null);
@@ -932,7 +930,6 @@ function SetupScreen({ playerCount, setPlayerCount, customTime, setCustomTime, s
     setTab('custom');
     applyCustom(inputValue);
   };
-
   const applyCustom = (val) => {
     const n = parseInt(val, 10);
     if (isNaN(n) || n < 5) {
@@ -947,44 +944,63 @@ function SetupScreen({ playerCount, setPlayerCount, customTime, setCustomTime, s
 
   const tabBtnStyle = (active) => ({
     flex: 1,
-    padding: '12px 8px',
-    background: active ? '#fff21f' : '#0a0a08',
-    color: active ? '#0a0a08' : '#888',
-    border: active ? 'none' : '1px solid #2a2620',
-    borderRadius: '2px',
-    fontSize: '13px',
+    padding: '11px 8px',
+    background: active ? '#39d353' : 'transparent',
+    color: active ? '#0d1117' : '#7d8590',
+    border: active ? 'none' : '1px solid #30363d',
+    borderRadius: '4px',
+    fontSize: '11px',
     fontWeight: 700,
-    fontFamily: 'inherit',
+    fontFamily: "'JetBrains Mono', monospace",
     cursor: 'pointer',
-    letterSpacing: '0.05em',
+    letterSpacing: '0.1em',
+    textTransform: 'uppercase',
   });
 
   return (
     <div style={{ animation: 'fade-in 0.4s' }}>
+      {/* 로고 */}
       <div style={styles.header}>
+        <div style={{ marginBottom: '8px' }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#39d353', letterSpacing: '0.3em' }}>
+            ▸ READY
+          </span>
+        </div>
         <div style={styles.logo}>SHUTTER BOMB</div>
         <div style={styles.subtitle}>찰칵 못 하면 터진다</div>
       </div>
 
+      {/* 게임 방법 - HUD 톤 */}
       <div style={styles.card}>
-        <div style={{ ...styles.label, marginBottom: '12px' }}>⚠ 게임 방법</div>
-        <div style={{ fontSize: '12px', lineHeight: '1.7', color: '#c5bfb0' }}>
-          1. 휴대폰 한 대를 폭탄처럼 돌립니다<br />
-          2. 화면에 뜬 미션 사진을 빨리 찍으세요<br />
-          3. 다 같이 "통과!" 외치고 다음 사람에게 패스<br />
-          4. 폭탄이 <span style={{ color: '#d6181a' }}>계속 타들어감</span> — 언제 터질지 모름<br />
-          5. 들고 있는 순간 터지면 그 사람이 폭탄 맞음<br />
-          6. 셀카 미션이면 카메라 화면의 <span style={{ color: '#fff21f' }}>🔄</span> 버튼으로 전면 전환<br />
-          7. 못 깰 미션이면 <span style={{ color: '#fff21f' }}>스킵</span> 1번 — 새 미션도 별로면 <span style={{ color: '#fff21f' }}>되돌리기</span> 가능<br />
-          <span style={{ color: '#fff21f' }}>━ 한 판당 폭탄 한 번. 점수·라운드는 폰 밖에서 알아서 카운트!</span>
+        <div style={{ ...styles.label, marginBottom: '14px' }}>
+          ▸ 게임 방법
+        </div>
+        <div style={{ fontSize: '13px', lineHeight: '1.75', color: '#c9d1d9', fontFamily: "'Pretendard', sans-serif" }}>
+          <div><span style={{ color: '#39d353', fontFamily: "'JetBrains Mono', monospace", marginRight: '8px' }}>01</span>휴대폰 한 대를 폭탄처럼 돌립니다</div>
+          <div><span style={{ color: '#39d353', fontFamily: "'JetBrains Mono', monospace", marginRight: '8px' }}>02</span>화면에 뜬 미션 사진을 빨리 찍어요</div>
+          <div><span style={{ color: '#39d353', fontFamily: "'JetBrains Mono', monospace", marginRight: '8px' }}>03</span>"통과!" 외치고 옆 사람에게 패스</div>
+          <div><span style={{ color: '#f85149', fontFamily: "'JetBrains Mono', monospace", marginRight: '8px' }}>04</span><span style={{ color: '#f85149' }}>들고 있을 때 터지면 폭탄 +1</span></div>
+          <div><span style={{ color: '#39d353', fontFamily: "'JetBrains Mono', monospace", marginRight: '8px' }}>05</span>셀카 미션은 카메라의 <span style={{ color: '#39d353' }}>🔄</span> 버튼</div>
+          <div><span style={{ color: '#39d353', fontFamily: "'JetBrains Mono', monospace", marginRight: '8px' }}>06</span>스킵 1번 + 별로면 되돌리기 가능</div>
         </div>
         <div
           style={{
             fontSize: '10px',
-            color: '#666',
-            marginTop: '10px',
-            paddingTop: '10px',
-            borderTop: '1px dashed #2a2620',
+            color: '#7d8590',
+            marginTop: '14px',
+            paddingTop: '12px',
+            borderTop: '0.5px solid #30363d',
+            letterSpacing: '0.1em',
+            fontFamily: "'JetBrains Mono', monospace",
+          }}
+        >
+          ━ ONE BOMB PER GAME · 점수는 알아서 카운트
+        </div>
+        <div
+          style={{
+            fontSize: '10px',
+            color: '#484f58',
+            marginTop: '8px',
             letterSpacing: '0.05em',
           }}
         >
@@ -992,60 +1008,48 @@ function SetupScreen({ playerCount, setPlayerCount, customTime, setCustomTime, s
         </div>
       </div>
 
-      {/* 폭탄 시간 설정 카드 (탭 위, 내용 아래) */}
+      {/* 폭탄 시간 설정 */}
       <div style={styles.card}>
-        <div style={{ ...styles.label, marginBottom: '12px', textAlign: 'center' }}>
-          폭탄 시간
+        <div style={{ ...styles.label, marginBottom: '14px', textAlign: 'center' }}>
+          ▸ FUSE CONFIG
         </div>
 
-        {/* 탭 */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
           <button onClick={selectAuto} style={tabBtnStyle(tab === 'auto')}>
-            인원별 자동
+            AUTO
           </button>
           <button onClick={selectCustom} style={tabBtnStyle(tab === 'custom')}>
-            시간 직접
+            CUSTOM
           </button>
         </div>
 
-        {/* 탭 내용 - 두 탭 동일한 높이감 */}
         <div style={{ minHeight: '120px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           {tab === 'auto' && (
             <div style={{ animation: 'fade-in 0.2s' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '20px',
-                }}
-              >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px' }}>
                 <button
                   onClick={dec}
                   disabled={playerCount <= 3}
                   style={{
-                    width: '52px',
-                    height: '52px',
-                    borderRadius: '50%',
-                    background: playerCount <= 3 ? '#1a1813' : '#fff21f',
-                    color: playerCount <= 3 ? '#444' : '#0a0a08',
-                    border: 'none',
-                    fontSize: '28px',
-                    fontWeight: 900,
+                    width: '48px', height: '48px', borderRadius: '50%',
+                    background: playerCount <= 3 ? '#161b22' : '#21262d',
+                    color: playerCount <= 3 ? '#484f58' : '#e6edf3',
+                    border: '1px solid #30363d',
+                    fontSize: '20px', fontWeight: 700,
                     cursor: playerCount <= 3 ? 'not-allowed' : 'pointer',
-                    fontFamily: 'inherit',
-                    boxShadow: playerCount <= 3 ? 'none' : '3px 3px 0 #d6181a',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    padding: 0,
                   }}
                 >
                   −
                 </button>
                 <div
                   style={{
-                    fontFamily: "'Bowlby One', serif",
-                    fontSize: '56px',
-                    color: '#fff21f',
-                    textShadow: '4px 4px 0 #d6181a',
-                    minWidth: '72px',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontWeight: 700,
+                    fontSize: '52px',
+                    color: '#39d353',
+                    minWidth: '70px',
                     textAlign: 'center',
                     lineHeight: 1,
                   }}
@@ -1056,17 +1060,14 @@ function SetupScreen({ playerCount, setPlayerCount, customTime, setCustomTime, s
                   onClick={inc}
                   disabled={playerCount >= 10}
                   style={{
-                    width: '52px',
-                    height: '52px',
-                    borderRadius: '50%',
-                    background: playerCount >= 10 ? '#1a1813' : '#fff21f',
-                    color: playerCount >= 10 ? '#444' : '#0a0a08',
+                    width: '48px', height: '48px', borderRadius: '50%',
+                    background: playerCount >= 10 ? '#161b22' : '#39d353',
+                    color: playerCount >= 10 ? '#484f58' : '#0d1117',
                     border: 'none',
-                    fontSize: '28px',
-                    fontWeight: 900,
+                    fontSize: '20px', fontWeight: 700,
                     cursor: playerCount >= 10 ? 'not-allowed' : 'pointer',
-                    fontFamily: 'inherit',
-                    boxShadow: playerCount >= 10 ? 'none' : '3px 3px 0 #d6181a',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    padding: 0,
                   }}
                 >
                   +
@@ -1075,28 +1076,21 @@ function SetupScreen({ playerCount, setPlayerCount, customTime, setCustomTime, s
               <div
                 style={{
                   fontSize: '10px',
-                  color: '#666',
+                  color: '#7d8590',
                   textAlign: 'center',
-                  marginTop: '14px',
-                  lineHeight: '1.5',
+                  marginTop: '16px',
+                  letterSpacing: '0.15em',
+                  fontFamily: "'JetBrains Mono', monospace",
                 }}
               >
-                {playerCount}명 — 인원수에 맞춰 랜덤 시간<br />
-                언제 터질지 모름
+                {playerCount} AGENTS · RANDOM TIMER
               </div>
             </div>
           )}
 
           {tab === 'custom' && (
             <div style={{ animation: 'fade-in 0.2s' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px',
-                }}
-              >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
                 <input
                   type="number"
                   inputMode="numeric"
@@ -1106,87 +1100,105 @@ function SetupScreen({ playerCount, setPlayerCount, customTime, setCustomTime, s
                   onChange={(e) => setInputValue(e.target.value)}
                   onBlur={() => applyCustom(inputValue)}
                   style={{
-                    width: '120px',
-                    background: '#0a0a08',
-                    border: '1px solid #fff21f',
-                    borderRadius: '2px',
+                    width: '130px',
+                    background: '#0d1117',
+                    border: '1px solid #39d353',
+                    borderRadius: '4px',
                     padding: '14px 12px',
-                    color: '#fff21f',
-                    fontFamily: "'Bowlby One', serif",
+                    color: '#39d353',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontWeight: 700,
                     fontSize: '32px',
                     textAlign: 'center',
                     boxSizing: 'border-box',
                   }}
                 />
-                <span style={{ fontSize: '15px', color: '#c5bfb0' }}>초에 터짐</span>
+                <span style={{ fontSize: '13px', color: '#c9d1d9', fontFamily: "'Pretendard', sans-serif" }}>
+                  초에 터짐
+                </span>
               </div>
               <div
                 style={{
                   fontSize: '10px',
-                  color: '#666',
+                  color: '#7d8590',
                   textAlign: 'center',
-                  marginTop: '14px',
-                  lineHeight: '1.5',
+                  marginTop: '16px',
+                  letterSpacing: '0.1em',
+                  fontFamily: "'JetBrains Mono', monospace",
                 }}
               >
-                정확히 {customTime != null ? customTime : inputValue}초 후 터집니다<br />
-                고정 시간이라 긴장감은 ↓
+                FIXED {customTime != null ? customTime : inputValue}s · NO RANDOM
               </div>
             </div>
           )}
         </div>
       </div>
 
-      <button onClick={startGame} className="yellow-btn" style={styles.btn}>
-        ▶ 게임 시작
+      <button onClick={startGame} style={styles.btn}>
+        ▸ 게임 시작
       </button>
     </div>
   );
 }
-
-// ========== 준비 화면 ==========
 function ReadyScreen({ startBomb, styles }) {
   return (
     <div style={{ animation: 'fade-in 0.4s', textAlign: 'center', paddingTop: '40px' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#39d353', letterSpacing: '0.3em' }}>
+          ▸ STANDBY
+        </span>
+      </div>
+
       <div
         style={{
-          fontSize: '96px',
-          marginTop: '32px',
-          marginBottom: '16px',
+          fontSize: '88px',
+          marginBottom: '24px',
           animation: 'pulse-bomb 1.5s ease-in-out infinite',
         }}
       >
         💣
       </div>
+
       <div
         style={{
-          fontFamily: "'Bowlby One', serif",
-          fontSize: '32px',
-          color: '#fff21f',
-          textShadow: '3px 3px 0 #d6181a',
-          marginBottom: '32px',
+          fontFamily: "'Pretendard', sans-serif",
+          fontWeight: 900,
+          fontSize: '26px',
+          color: '#e6edf3',
+          marginBottom: '8px',
+          letterSpacing: '0.05em',
         }}
       >
         준비됐나?
       </div>
+      <div
+        style={{
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: '11px',
+          color: '#39d353',
+          letterSpacing: '0.25em',
+          marginBottom: '32px',
+        }}
+      >
+        FUSE ARMING
+      </div>
 
       <div style={{ ...styles.card, textAlign: 'left', marginBottom: '24px' }}>
-        <div style={{ fontSize: '12px', lineHeight: '1.8', color: '#c5bfb0' }}>
-          ◆ 처음 시작할 사람이 휴대폰을 들고 [점화]<br />
-          ◆ 시작 누르면 <span style={{ color: '#d6181a' }}>폭탄 점화</span> — 게임 동안 계속 타들어감<br />
-          ◆ 미션 사진 찍고 → "통과!" 외치고 → 옆 사람에게 패스<br />
-          ◆ 언제 터질지 <span style={{ color: '#d6181a' }}>아무도 모름</span>
+        <div style={{ ...styles.label, marginBottom: '12px' }}>▸ BRIEFING</div>
+        <div style={{ fontSize: '13px', lineHeight: '1.85', color: '#c9d1d9', fontFamily: "'Pretendard', sans-serif" }}>
+          <div>◆ 처음 시작할 사람이 휴대폰을 들고 점화</div>
+          <div>◆ 시작 누르면 <span style={{ color: '#f85149', fontWeight: 700 }}>폭탄 점화</span> — 계속 타들어감</div>
+          <div>◆ 미션 사진 찍고 → 통과 → 옆 사람</div>
+          <div>◆ 언제 터질지 <span style={{ color: '#f85149', fontWeight: 700 }}>아무도 모름</span></div>
         </div>
       </div>
 
-      <button onClick={startBomb} className="red-btn" style={{ ...styles.btn, ...styles.btnDanger }}>
+      <button onClick={startBomb} style={{ ...styles.btn, ...styles.btnDanger }}>
         💣 폭탄 점화
       </button>
     </div>
   );
 }
-
-// ========== 미션 화면 (카메라) ==========
 function MissionScreen({
   mission,
   isDanger,
@@ -1210,7 +1222,10 @@ function MissionScreen({
   };
 
   const canSkip = skipsLeft > 0;
-  const canRevert = !!prevMission; // 스킵을 한 상태면 되돌리기 가능
+  const canRevert = !!prevMission;
+
+  const accentColor = isDanger ? '#f85149' : '#39d353';
+  const mutedColor = '#7d8590';
 
   return (
     <div
@@ -1218,74 +1233,62 @@ function MissionScreen({
         animation: isDanger ? 'shake 0.4s infinite' : 'fade-in 0.3s',
       }}
     >
+      {/* 상단 HUD 바 */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '16px',
+          padding: '16px 16px 12px',
         }}
       >
-        <div
-          style={{
-            fontSize: '11px',
-            color: '#888',
-            letterSpacing: '0.2em',
-          }}
-        >
-          💣 SHUTTER BOMB
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: accentColor, letterSpacing: '0.2em' }}>
+          ▸ 폭탄 보유자
         </div>
-        <div
-          style={{
-            fontSize: '10px',
-            color: canSkip ? '#fff21f' : '#666',
-            letterSpacing: '0.15em',
-            fontWeight: 700,
-          }}
-        >
-          {canSkip && '⤴ SKIP ×1'}
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: canSkip ? '#39d353' : mutedColor, letterSpacing: '0.15em', fontWeight: 500 }}>
+          {canSkip && '⤴ SKIP [1]'}
           {!canSkip && canRevert && '↩ 되돌리기 가능'}
-          {!canSkip && !canRevert && '⤴ SKIP 사용됨'}
+          {!canSkip && !canRevert && '⤴ SKIP USED'}
         </div>
       </div>
 
-      {/* 미션 카드 */}
-      <div
-        style={{
-          ...styles.card,
-          background: '#1a1813',
-          borderColor: '#fff21f',
-          borderWidth: '2px',
-          marginBottom: '12px',
-        }}
-      >
-        <div style={{ ...styles.label, marginBottom: '8px' }}>현재 미션</div>
+      {/* 미션 디렉티브 (대시 보더) */}
+      <div style={{ padding: '0 16px 12px' }}>
         <div
           style={{
-            fontSize: '24px',
-            fontWeight: 900,
-            color: '#fff21f',
-            lineHeight: '1.2',
-            fontFamily: "'Bowlby One', serif",
-            letterSpacing: '-0.01em',
+            border: `1px dashed ${accentColor}`,
+            borderRadius: '6px',
+            padding: '14px 16px',
+            background: isDanger ? 'rgba(248, 81, 73, 0.05)' : 'rgba(57, 211, 83, 0.04)',
           }}
         >
-          <span style={{ marginRight: '8px' }}>{mission?.icon}</span>
-          {mission?.text}
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: accentColor, letterSpacing: '0.2em', marginBottom: '6px' }}>
+            ▸ 미션
+          </div>
+          <div
+            style={{
+              fontFamily: "'Pretendard', sans-serif",
+              fontWeight: 700,
+              fontSize: '20px',
+              color: '#e6edf3',
+              lineHeight: '1.3',
+            }}
+          >
+            <span style={{ marginRight: '8px' }}>{mission?.icon}</span>
+            {mission?.text}
+          </div>
         </div>
       </div>
 
-      {/* 카메라 뷰 */}
+      {/* 카메라 뷰 - 풀폭, HUD 코너 + 십자선 */}
       <div
         style={{
           position: 'relative',
           width: '100%',
           aspectRatio: '4/3',
           background: '#000',
-          borderRadius: '4px',
           overflow: 'hidden',
           marginBottom: '12px',
-          border: '1px solid #2a2620',
         }}
       >
         <video
@@ -1300,26 +1303,76 @@ function MissionScreen({
             transform: facingMode === 'user' ? 'scaleX(-1)' : 'none',
           }}
         />
-        {/* 카메라 코너 마커 */}
-        <CornerMark style={{ top: 8, left: 8, borderTop: '2px solid #fff21f', borderLeft: '2px solid #fff21f' }} />
-        <CornerMark style={{ top: 8, right: 8, borderTop: '2px solid #fff21f', borderRight: '2px solid #fff21f' }} />
-        <CornerMark style={{ bottom: 8, left: 8, borderBottom: '2px solid #fff21f', borderLeft: '2px solid #fff21f' }} />
-        <CornerMark style={{ bottom: 8, right: 8, borderBottom: '2px solid #fff21f', borderRight: '2px solid #fff21f' }} />
+        {/* 위험 시 붉은 틴트 */}
+        {isDanger && (
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(248, 81, 73, 0.18)', pointerEvents: 'none' }} />
+        )}
 
-        {/* 카메라 전환 버튼 (우상단) */}
+        {/* HUD 코너 마커 (직각) */}
+        <CornerMark style={{ top: 12, left: 12, borderTop: `2px solid ${accentColor}`, borderLeft: `2px solid ${accentColor}` }} />
+        <CornerMark style={{ top: 12, right: 12, borderTop: `2px solid ${accentColor}`, borderRight: `2px solid ${accentColor}` }} />
+        <CornerMark style={{ bottom: 12, left: 12, borderBottom: `2px solid ${accentColor}`, borderLeft: `2px solid ${accentColor}` }} />
+        <CornerMark style={{ bottom: 12, right: 12, borderBottom: `2px solid ${accentColor}`, borderRight: `2px solid ${accentColor}` }} />
+
+        {/* 중앙 크로스헤어 */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%', left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '32px', height: '32px',
+            borderRadius: '50%',
+            border: `1px solid ${accentColor}`,
+            opacity: isDanger ? 0.7 : 0.4,
+            pointerEvents: 'none',
+          }}
+        >
+          <div style={{ position: 'absolute', top: '50%', left: '8px', right: '8px', height: '1px', background: accentColor, transform: 'translateY(-50%)' }} />
+          <div style={{ position: 'absolute', left: '50%', top: '8px', bottom: '8px', width: '1px', background: accentColor, transform: 'translateX(-50%)' }} />
+        </div>
+
+        {/* HUD 텍스트 - 좌하단 / 우하단 */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '18px',
+            left: '20px',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '10px',
+            color: accentColor,
+            letterSpacing: '0.15em',
+          }}
+        >
+          REC <span style={{ animation: isDanger ? 'blink 0.5s infinite' : 'blink 1.5s infinite' }}>●</span>
+        </div>
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '18px',
+            right: '20px',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '10px',
+            color: accentColor,
+            letterSpacing: '0.15em',
+          }}
+        >
+          [{isDanger ? '!! DETONATING' : 'ARMED'}]
+        </div>
+
+        {/* 카메라 전환 */}
         <button
           onClick={flipCamera}
           style={{
             position: 'absolute',
-            top: '12px',
-            right: '12px',
+            top: '16px',
+            right: '16px',
             width: '40px',
             height: '40px',
             borderRadius: '50%',
-            background: 'rgba(10, 10, 8, 0.7)',
-            border: '1px solid #fff21f',
-            color: '#fff21f',
-            fontSize: '18px',
+            background: 'rgba(13, 17, 23, 0.85)',
+            border: `1px solid ${accentColor}`,
+            color: accentColor,
+            fontSize: '16px',
             cursor: 'pointer',
             fontFamily: 'inherit',
             display: 'flex',
@@ -1329,49 +1382,54 @@ function MissionScreen({
           }}
           aria-label="카메라 전환"
         >
-          🔄
+          ↻
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px' }}>
-        {canRevert ? (
+      {/* 하단 액션 - 풀폭, 좌우 패딩 */}
+      <div style={{ padding: '0 16px 16px' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {canRevert ? (
+            <button
+              onClick={handleRevertSkip}
+              style={{
+                ...styles.btn,
+                background: 'transparent',
+                color: '#39d353',
+                border: '1px solid #39d353',
+                flex: 1,
+              }}
+            >
+              ↩ 되돌리기
+            </button>
+          ) : (
+            <button
+              onClick={handleSkipMission}
+              disabled={!canSkip}
+              style={{
+                ...styles.btn,
+                ...styles.btnGhost,
+                flex: 1,
+                opacity: canSkip ? 1 : 0.4,
+              }}
+            >
+              ⤴ SKIP
+            </button>
+          )}
           <button
-            onClick={handleRevertSkip}
+            onClick={handleShutter}
             style={{
               ...styles.btn,
-              ...styles.btnGhost,
-              flex: 1,
-              color: '#fff21f',
-              borderColor: '#fff21f',
+              ...(isDanger ? styles.btnDanger : {}),
+              flex: 2,
             }}
           >
-            ↩ 되돌리기
+            ▸ {isDanger ? '빨리 찍어' : '찰칵'}
           </button>
-        ) : (
-          <button
-            onClick={handleSkipMission}
-            disabled={!canSkip}
-            style={{
-              ...styles.btn,
-              ...styles.btnGhost,
-              flex: 1,
-              opacity: canSkip ? 1 : 0.35,
-              cursor: canSkip ? 'pointer' : 'not-allowed',
-            }}
-          >
-            ⤴ 스킵
-          </button>
-        )}
-        <button
-          onClick={handleShutter}
-          className="yellow-btn"
-          style={{ ...styles.btn, flex: 2 }}
-        >
-          📸 찰칵
-        </button>
-      </div>
+        </div>
 
-      <ForceEndButton handleForceEnd={handleForceEnd} />
+        <ForceEndButton handleForceEnd={handleForceEnd} />
+      </div>
     </div>
   );
 }
@@ -1400,18 +1458,19 @@ function ForceEndButton({ handleForceEnd }) {
         style={{
           width: '100%',
           marginTop: '20px',
-          padding: '8px',
+          padding: '10px',
           background: 'transparent',
-          color: '#555',
-          border: '1px dashed #2a2620',
-          borderRadius: '2px',
+          color: '#484f58',
+          border: '1px dashed #30363d',
+          borderRadius: '4px',
           fontSize: '10px',
-          letterSpacing: '0.2em',
-          fontFamily: 'inherit',
+          letterSpacing: '0.25em',
+          fontFamily: "'JetBrains Mono', monospace",
           cursor: 'pointer',
+          textTransform: 'uppercase',
         }}
       >
-        × 게임 종료
+        ⨯ ABORT MISSION
       </button>
     );
   }
@@ -1420,51 +1479,54 @@ function ForceEndButton({ handleForceEnd }) {
     <div
       style={{
         marginTop: '20px',
-        padding: '12px',
-        background: '#15130f',
-        border: '1px solid #d6181a',
-        borderRadius: '2px',
+        padding: '14px',
+        background: 'rgba(248, 81, 73, 0.06)',
+        border: '1px solid #f85149',
+        borderRadius: '6px',
         textAlign: 'center',
         animation: 'fade-in 0.2s',
       }}
     >
-      <div style={{ fontSize: '11px', color: '#c5bfb0', marginBottom: '10px' }}>
-        정말 종료할까요? 파이널 리포트로 갑니다
+      <div style={{ fontSize: '12px', color: '#c9d1d9', marginBottom: '12px', fontFamily: "'Pretendard', sans-serif" }}>
+        정말 종료할까요? 셔터밤 갤러리로 갑니다
       </div>
       <div style={{ display: 'flex', gap: '6px' }}>
         <button
           onClick={() => setConfirming(false)}
           style={{
             flex: 1,
-            padding: '8px',
+            padding: '10px',
             background: 'transparent',
-            color: '#888',
-            border: '1px solid #2a2620',
-            borderRadius: '2px',
+            color: '#7d8590',
+            border: '1px solid #30363d',
+            borderRadius: '4px',
             fontSize: '11px',
-            fontFamily: 'inherit',
+            fontFamily: "'JetBrains Mono', monospace",
+            letterSpacing: '0.15em',
             cursor: 'pointer',
+            textTransform: 'uppercase',
           }}
         >
-          취소
+          CANCEL
         </button>
         <button
           onClick={handleForceEnd}
           style={{
             flex: 1,
-            padding: '8px',
-            background: '#d6181a',
-            color: '#fff',
+            padding: '10px',
+            background: '#f85149',
+            color: '#ffffff',
             border: 'none',
-            borderRadius: '2px',
+            borderRadius: '4px',
             fontSize: '11px',
             fontWeight: 700,
-            letterSpacing: '0.1em',
-            fontFamily: 'inherit',
+            letterSpacing: '0.15em',
+            fontFamily: "'JetBrains Mono', monospace",
             cursor: 'pointer',
+            textTransform: 'uppercase',
           }}
         >
-          종료
+          ABORT
         </button>
       </div>
     </div>
@@ -1481,86 +1543,86 @@ function PhotoConfirmScreen({
   handleForceEnd,
   styles,
 }) {
+  const accentColor = isDanger ? '#f85149' : '#39d353';
   return (
-    <div
-      style={{
-        animation: isDanger ? 'shake 0.4s infinite' : 'fade-in 0.3s',
-      }}
-    >
+    <div style={{ animation: isDanger ? 'shake 0.4s infinite' : 'fade-in 0.3s' }}>
       <div
         style={{
-          fontSize: '11px',
-          color: '#888',
-          letterSpacing: '0.2em',
-          marginBottom: '16px',
+          padding: '16px 16px 12px',
           textAlign: 'center',
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: '10px',
+          color: accentColor,
+          letterSpacing: '0.25em',
         }}
       >
-        💣 SHUTTER BOMB
+        ▸ 사진 확인
       </div>
 
-      <div
-        style={{
-          ...styles.card,
-          textAlign: 'center',
-          background: '#1a1813',
-          marginBottom: '12px',
-        }}
-      >
-        <div style={{ ...styles.label, marginBottom: '4px' }}>이 사진, 미션 OK?</div>
-        <div style={{ fontSize: '14px', color: '#fff21f', marginBottom: '12px' }}>
-          {mission?.icon} {mission?.text}
-        </div>
-        <img
-          src={photo}
-          alt="taken"
-          style={{
-            width: '100%',
-            aspectRatio: '4/3',
-            objectFit: 'cover',
-            borderRadius: '2px',
-            border: '2px solid #fff21f',
-            display: 'block',
-          }}
-        />
+      <div style={{ padding: '0 16px 12px' }}>
         <div
           style={{
-            fontSize: '11px',
-            color: '#c5bfb0',
-            marginTop: '10px',
-            letterSpacing: '0.05em',
+            border: `1px dashed ${accentColor}`,
+            borderRadius: '6px',
+            padding: '12px 16px',
+            background: isDanger ? 'rgba(248, 81, 73, 0.05)' : 'rgba(57, 211, 83, 0.04)',
           }}
         >
-          다 같이 보고 <span style={{ color: '#fff21f', fontWeight: 700 }}>"통과!"</span> 외치고 옆 사람에게 패스
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: accentColor, letterSpacing: '0.2em', marginBottom: '4px' }}>
+            ▸ 미션
+          </div>
+          <div style={{ fontFamily: "'Pretendard', sans-serif", fontWeight: 700, fontSize: '15px', color: '#e6edf3', lineHeight: '1.3' }}>
+            <span style={{ marginRight: '6px' }}>{mission?.icon}</span>{mission?.text}
+          </div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <button
-          onClick={handleRetake}
+      <img
+        src={photo}
+        alt="taken"
+        style={{
+          width: '100%',
+          aspectRatio: '4/3',
+          objectFit: 'cover',
+          display: 'block',
+          marginBottom: '12px',
+        }}
+      />
+
+      <div style={{ padding: '0 16px 16px' }}>
+        <div
           style={{
-            ...styles.btn,
-            ...styles.btnGhost,
-            flex: 1,
+            fontSize: '12px',
+            color: '#c9d1d9',
+            marginBottom: '14px',
+            textAlign: 'center',
+            fontFamily: "'Pretendard', sans-serif",
           }}
         >
-          ↻ 다시
-        </button>
-        <button
-          onClick={handlePass}
-          className="yellow-btn"
-          style={{ ...styles.btn, flex: 2 }}
-        >
-          ✓ 통과! 옆 사람에게
-        </button>
-      </div>
+          다 같이 보고 <span style={{ color: '#39d353', fontWeight: 700 }}>"통과!"</span> 외치고 옆 사람에게
+        </div>
 
-      <ForceEndButton handleForceEnd={handleForceEnd} />
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={handleRetake}
+            style={{ ...styles.btn, ...styles.btnGhost, flex: 1 }}
+          >
+            ↻ 다시
+          </button>
+          <button
+            onClick={handlePass}
+            style={{ ...styles.btn, ...(isDanger ? styles.btnDanger : {}), flex: 2 }}
+          >
+            ▸ 통과! 옆 사람에게
+          </button>
+        </div>
+
+        <ForceEndButton handleForceEnd={handleForceEnd} />
+      </div>
     </div>
   );
 }
 
-// ========== 폭탄 터짐 화면 ==========
 function ExplodeScreen({ handleAfterExplode, styles }) {
   const [show, setShow] = useState(false);
   useEffect(() => {
@@ -1574,54 +1636,92 @@ function ExplodeScreen({ handleAfterExplode, styles }) {
         textAlign: 'center',
         paddingTop: '60px',
         animation: 'flash-red 0.4s 3',
+        position: 'relative',
       }}
     >
+      {/* 스캔라인 효과 - 미묘하게 */}
       <div
         style={{
-          fontSize: '120px',
+          position: 'absolute', inset: 0,
+          backgroundImage: 'repeating-linear-gradient(0deg, rgba(13,17,23,0.15) 0px, rgba(13,17,23,0.15) 1px, transparent 1px, transparent 3px)',
+          pointerEvents: 'none',
+          opacity: 0.5,
+        }}
+      />
+
+      <div style={{ marginBottom: '8px' }}>
+        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#ffffff', letterSpacing: '0.3em' }}>
+          ▸ MISSION FAILED
+        </span>
+      </div>
+
+      <div
+        style={{
+          fontSize: '110px',
           animation: 'shake 0.3s infinite',
           marginBottom: '8px',
         }}
       >
         💥
       </div>
+
       <div
         style={{
-          fontFamily: "'Bowlby One', serif",
-          fontSize: '56px',
-          color: '#d6181a',
-          textShadow: '4px 4px 0 #fff21f',
+          fontFamily: "'Pretendard', sans-serif",
+          fontWeight: 900,
+          fontSize: '52px',
+          color: '#f85149',
           marginBottom: '24px',
           letterSpacing: '-0.02em',
         }}
       >
-        BOOM!
+        BOOM
       </div>
 
       {show && (
         <>
           <div
             style={{
-              ...styles.card,
+              margin: '0 16px 16px',
+              border: '1px solid #f85149',
+              borderRadius: '6px',
+              padding: '18px',
+              background: 'rgba(248, 81, 73, 0.06)',
               animation: 'fade-in 0.4s',
-              textAlign: 'center',
             }}
           >
-            <div style={{ fontSize: '14px', color: '#fff21f', lineHeight: '1.6', fontWeight: 700 }}>
-              지금 들고 있던 사람<br />
-              <span style={{ fontSize: '20px', color: '#d6181a' }}>폭탄 맞음 🎯</span>
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: '10px',
+                color: '#f85149',
+                letterSpacing: '0.25em',
+                marginBottom: '10px',
+              }}
+            >
+              ▸ STATUS
             </div>
-            <div style={{ fontSize: '11px', color: '#888', marginTop: '12px' }}>
-              점수는 알아서 카운트 ✊
+            <div style={{ fontSize: '14px', color: '#e6edf3', fontFamily: "'Pretendard', sans-serif", marginBottom: '10px' }}>
+              지금 들고 있던 사람
+            </div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: '20px', color: '#f85149', letterSpacing: '0.1em' }}>
+              ▸ BOMB +1
+            </div>
+            <div style={{ fontSize: '11px', color: '#7d8590', marginTop: '12px', fontFamily: "'Pretendard', sans-serif" }}>
+              점수는 폰 밖에서 알아서 카운트 ✊
             </div>
           </div>
 
           <button
             onClick={handleAfterExplode}
-            className="yellow-btn"
-            style={{ ...styles.btn, marginTop: '16px', animation: 'fade-in 0.5s 0.2s both' }}
+            style={{
+              ...styles.btn,
+              margin: '0 16px',
+              width: 'calc(100% - 32px)',
+              animation: 'fade-in 0.5s 0.2s both',
+            }}
           >
-            ▶ 최종 결과 보기
+            ▸ 셔터밤 갤러리 보기
           </button>
         </>
       )}
@@ -1629,63 +1729,60 @@ function ExplodeScreen({ handleAfterExplode, styles }) {
   );
 }
 
-// ========== 게임오버 화면 ==========
 function GameOverScreen({ photoGallery, resetGame, styles }) {
   return (
-    <div style={{ animation: 'fade-in 0.5s', paddingBottom: '32px' }}>
-      <div style={styles.header}>
-        <div style={{ ...styles.logo, fontSize: '24px' }}>FINAL REPORT</div>
-        <div style={styles.subtitle}>━ 폭발 사고 조사 보고서 ━</div>
-      </div>
-
-      <div style={{ ...styles.card, textAlign: 'center' }}>
-        <div style={{ fontSize: '48px', marginBottom: '8px' }}>📸</div>
+    <div style={{ animation: 'fade-in 0.4s', paddingTop: '20px' }}>
+      {/* 헤더 */}
+      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+        <div style={{ fontSize: '40px', marginBottom: '12px' }}>📸</div>
         <div
           style={{
-            fontFamily: "'Bowlby One', serif",
-            fontSize: '32px',
-            color: '#fff21f',
-            textShadow: '3px 3px 0 #d6181a',
-            marginBottom: '8px',
-            letterSpacing: '-0.02em',
+            fontFamily: "'Pretendard', sans-serif",
+            fontWeight: 900,
+            fontSize: '26px',
+            color: '#e6edf3',
+            letterSpacing: '0.05em',
+            marginBottom: '6px',
           }}
         >
           셔터밤 갤러리
         </div>
-        <div style={{ fontSize: '13px', color: '#c5bfb0', lineHeight: '1.7' }}>
-          한 판 끝! 점수·라운드는 알아서 카운트하세요<br />
-          <span style={{ color: '#888', fontSize: '11px' }}>
-            (사진은 길게 누르거나 공유 버튼으로 친구들과)
-          </span>
+        <div
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: '11px',
+            color: '#39d353',
+            letterSpacing: '0.25em',
+          }}
+        >
+          ▸ {photoGallery.length} CAPTURES LOGGED
+        </div>
+        <div style={{ fontSize: '12px', color: '#7d8590', marginTop: '8px', fontFamily: "'Pretendard', sans-serif" }}>
+          한 판 끝! 점수는 알아서 카운트하세요
         </div>
       </div>
 
       {photoGallery.length > 0 && (
         <div style={styles.card}>
           <div style={{ ...styles.label, marginBottom: '6px' }}>
-            📸 {photoGallery.length}장
+            ▸ 📸 {photoGallery.length}장
           </div>
           <div
             style={{
               fontSize: '11px',
-              color: '#888',
+              color: '#7d8590',
               marginBottom: '14px',
-              lineHeight: '1.5',
+              lineHeight: '1.6',
+              fontFamily: "'Pretendard', sans-serif",
             }}
           >
-            ◆ 사진을 <span style={{ color: '#fff21f' }}>길게 눌러</span> 저장<br />
-            ◆ <span style={{ color: '#fff21f' }}>공유 버튼</span>으로 단톡/SNS에 바로
+            ◆ 사진을 <span style={{ color: '#39d353' }}>길게 눌러</span> 저장<br />
+            ◆ <span style={{ color: '#39d353' }}>공유 버튼</span>으로 단톡/SNS에 바로
           </div>
 
           <ShareAllButton photoGallery={photoGallery} />
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '10px',
-            }}
-          >
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             {photoGallery.map((g, i) => (
               <PhotoCard key={i} g={g} index={i} />
             ))}
@@ -1693,18 +1790,16 @@ function GameOverScreen({ photoGallery, resetGame, styles }) {
         </div>
       )}
 
-      <button onClick={resetGame} className="yellow-btn" style={styles.btn}>
+      <button onClick={resetGame} style={styles.btn}>
         ↻ 다시 시작
       </button>
     </div>
   );
 }
 
-// ========== 갤러리 사진 카드 (저장/공유) ==========
 function PhotoCard({ g, index }) {
-  const [shareStatus, setShareStatus] = useState(''); // '', 'sharing', 'unsupported', 'error'
+  const [shareStatus, setShareStatus] = useState('');
 
-  // base64 dataURL → File 객체 변환
   const dataUrlToFile = async (dataUrl, filename) => {
     const res = await fetch(dataUrl);
     const blob = await res.blob();
@@ -1714,31 +1809,24 @@ function PhotoCard({ g, index }) {
   const handleShare = async () => {
     const filename = `shutter-bomb-${index + 1}.jpg`;
     try {
-      // 1차 시도: 파일과 함께 공유 (Web Share API Level 2)
       const file = await dataUrlToFile(g.photo, filename);
       const shareData = {
         files: [file],
         title: 'Shutter Bomb',
         text: `미션: ${g.mission}`,
       };
-      // canShare로 파일 공유 가능 여부 확인 (iOS Safari, 최신 Android Chrome 지원)
       if (navigator.canShare && navigator.canShare(shareData)) {
         setShareStatus('sharing');
         await navigator.share(shareData);
         setShareStatus('');
         return;
       }
-      // 2차 시도: 텍스트만 공유 (파일 미지원 시)
       if (navigator.share) {
         setShareStatus('sharing');
-        await navigator.share({
-          title: 'Shutter Bomb',
-          text: `미션: ${g.mission}`,
-        });
+        await navigator.share({ title: 'Shutter Bomb', text: `미션: ${g.mission}` });
         setShareStatus('');
         return;
       }
-      // 3차: 공유 자체 미지원 → 다운로드 폴백
       setShareStatus('unsupported');
       const a = document.createElement('a');
       a.href = g.photo;
@@ -1746,7 +1834,6 @@ function PhotoCard({ g, index }) {
       a.click();
       setTimeout(() => setShareStatus(''), 2000);
     } catch (err) {
-      // 사용자가 공유 취소한 경우는 무시
       if (err.name !== 'AbortError') {
         console.error('Share failed', err);
         setShareStatus('error');
@@ -1767,36 +1854,46 @@ function PhotoCard({ g, index }) {
             width: '100%',
             aspectRatio: '4/3',
             objectFit: 'cover',
-            borderRadius: '2px',
-            border: '1px solid #2a2620',
+            borderRadius: '4px',
+            border: '0.5px solid #30363d',
             display: 'block',
           }}
         />
       </div>
-      <div style={{ fontSize: '9px', color: '#888', marginTop: '4px', minHeight: '12px' }}>
+      <div
+        style={{
+          fontSize: '10px',
+          color: '#7d8590',
+          marginTop: '6px',
+          minHeight: '14px',
+          fontFamily: "'Pretendard', sans-serif",
+          lineHeight: '1.3',
+        }}
+      >
         {g.mission}
       </div>
       <button
         onClick={handleShare}
         style={{
           width: '100%',
-          marginTop: '4px',
-          padding: '6px',
-          background: '#15130f',
-          color: '#fff21f',
-          border: '1px solid #2a2620',
-          borderRadius: '2px',
+          marginTop: '6px',
+          padding: '8px',
+          background: 'transparent',
+          color: '#39d353',
+          border: '1px solid #30363d',
+          borderRadius: '4px',
           fontSize: '10px',
           fontWeight: 700,
-          letterSpacing: '0.1em',
-          fontFamily: 'inherit',
+          letterSpacing: '0.15em',
+          fontFamily: "'JetBrains Mono', monospace",
           cursor: 'pointer',
+          textTransform: 'uppercase',
         }}
       >
         {shareStatus === 'sharing' && '공유 중...'}
-        {shareStatus === 'unsupported' && '⬇ 다운로드'}
-        {shareStatus === 'error' && '⚠ 실패'}
-        {shareStatus === '' && '⬆ 공유'}
+        {shareStatus === 'unsupported' && '⬇ DOWNLOAD'}
+        {shareStatus === 'error' && '⚠ FAILED'}
+        {shareStatus === '' && '⬆ SHARE'}
       </button>
     </div>
   );
@@ -1863,17 +1960,17 @@ function ShareAllButton({ photoGallery }) {
       style={{
         width: '100%',
         marginBottom: '14px',
-        padding: '12px',
-        background: '#fff21f',
-        color: '#0a0a08',
+        padding: '14px',
+        background: '#39d353',
+        color: '#0d1117',
         border: 'none',
-        borderRadius: '2px',
-        fontSize: '13px',
-        fontWeight: 900,
+        borderRadius: '4px',
+        fontSize: '12px',
+        fontWeight: 700,
         letterSpacing: '0.1em',
-        fontFamily: 'inherit',
+        fontFamily: "'JetBrains Mono', monospace",
         cursor: 'pointer',
-        boxShadow: '3px 3px 0 #d6181a',
+        textTransform: 'uppercase',
       }}
     >
       {status === 'sharing' && '공유 중...'}
