@@ -106,11 +106,8 @@ const MISSIONS = [
   // ========== 발견: 텍스처/재질 ==========
   { text: "반짝이는 표면 (광택)", icon: "✨" },
   { text: "투명한 것", icon: "🫧" },
-  { text: "부드러워 보이는 것", icon: "🪶" },
-  { text: "거친 표면", icon: "🪨" },
   { text: "푹신해 보이는 것", icon: "🛋️" },
   { text: "차가워 보이는 금속", icon: "⚙️" },
-  { text: "따뜻해 보이는 천이나 가죽", icon: "🧥" },
   { text: "빛이 통과하는 반투명", icon: "🪟" },
 
   // ========== 발견: 역발견 (없는 것) ==========
@@ -142,7 +139,6 @@ const MISSIONS = [
   // ========== 발견: 글자/그림 변주 ==========
   { text: "손글씨로 쓰인 무언가", icon: "✍️" },
   { text: "별표나 하트 모양", icon: "⭐" },
-  { text: "영문 단어 하나를 통째로 읽을 수 있는 것", icon: "🔡" },
   // 95 (점선/점 무늬) 삭제
 
   // ========== 발견: 사람 없는 흔적 ==========
@@ -153,16 +149,19 @@ const MISSIONS = [
   { text: "비상구 표시", icon: "🚪" },
   { text: "아무 간판이나", icon: "🪧" },
   { text: "소화기", icon: "🧯" },
+  { text: "CCTV 카메라", icon: "📹" },
+  { text: "엘리베이터 버튼 또는 층수 표시", icon: "🛗" },
+  { text: "쓰레기통", icon: "🗑️" },
+  { text: "미술품 (그림이든 조형물이든)", icon: "🖼️" },
+  { text: "화분이나 식물", icon: "🪴" },
 
   // 98 (반사된 모습) 삭제 → 섹션 통째로 사라짐
 
   // ========== 청각 (소리 기반) ==========
   { text: "누가 웃음소리 낸 직후의 표정", icon: "🤣" },
   // 100 (박수 직후), 101 (음악 출처), 102 (동시 말하는 두 사람) 삭제
-  { text: "한 사람이 큰 소리로 말하는 순간 (입 크게 벌어진)", icon: "📢" },
 
   // ========== 부정형 (~이 아닌 것) ==========
-  { text: "사람이 아닌 것 중 가장 어두운 것", icon: "🌑" },
   // 105 (본인이 만지지 않고 있는 것) 삭제
 
   // ========== 시간성 (순간) ==========
@@ -170,7 +169,6 @@ const MISSIONS = [
   { text: "무언가를 집어 드는 순간", icon: "⬆️" },
 
   // ========== 시점 제약 ==========
-  { text: "본인 눈높이보다 위에 있는 무언가", icon: "🔝" },
 
   // ========== 액션: 공간 이동 ==========
   { text: "화장실까지 가서 무엇이든 한 장", icon: "🚽" },
@@ -182,7 +180,6 @@ const MISSIONS = [
   { text: "어딘가의 서랍을 열고 안에서 한 장", icon: "🗄️" },
   { text: "냉장고 안 한 장 (있으면)", icon: "🧊" },
   { text: "거울 앞까지 가서 본인 사진 한 장", icon: "🪞" },
-  { text: "의자 위에 올라가서 항공샷 한 장", icon: "🛫" },
 
   // ========== 액션: 용품 시리즈 ==========
   { text: "부엌용품 한 장", icon: "🍳" },
@@ -209,7 +206,6 @@ const MISSIONS = [
 
   // ========== 액션: 운빨 사진 ==========
   { text: "눈 감고 찍어서 사람이 담기면 성공", icon: "🙈" },
-  { text: "휴대폰을 등 뒤로 돌려서 찍어서 사람 담기면 성공", icon: "🔄" },
   { text: "휴대폰을 머리 위로 들고 안 보고 찍어서 사람 담기면 성공", icon: "🆙" },
 
   // ========== 이미지 게임: 외모/매력 ==========
@@ -253,7 +249,6 @@ const MISSIONS = [
   { text: "제일 부자 될 것 같은 사람", icon: "💰" },
   { text: "제일 오래 살 것 같은 사람", icon: "🎂" },
   { text: "제일 먼저 잠들 것 같은 사람 (오늘)", icon: "🌙" },
-  { text: "다음 라운드 폭탄 맞을 것 같은 사람", icon: "💣" },
 
   // ========== 이미지 게임: 동물 비유 ==========
   { text: "강아지를 제일 닮은 것 같은 사람", icon: "🐶" },
@@ -348,7 +343,7 @@ const getRoundDuration = (playerCount) => {
 function App() {
   const [phase, setPhase] = useState('setup'); // setup, ready, mission, photo, explode, gameover
   const [playerCount, setPlayerCount] = useState(5);
-  const [customTime, setCustomTime] = useState(null); // null이면 인원별 자동, 숫자면 그 초로 고정
+  const [customTime, setCustomTime] = useState(60); // 기본 커스텀 60초. null이면 인원별 자동
   const [mission, setMission] = useState(null);
   // 폭탄 타이머: 게임 시작 시점에 한 번만 정해지고, 패스해도 리셋 안 됨
   const [bombFuseTotal, setBombFuseTotal] = useState(0); // 이번 게임 폭탄 전체 시간(초)
@@ -759,6 +754,10 @@ function App() {
       background: '#f85149',
       color: '#ffffff',
     },
+    btnPass: {
+      background: '#58a6ff',
+      color: '#0d1117',
+    },
     btnGhost: {
       background: 'transparent',
       color: '#7d8590',
@@ -819,6 +818,10 @@ function App() {
         @keyframes scanline {
           0% { transform: translateY(-100%); }
           100% { transform: translateY(100vh); }
+        }
+        @keyframes urgent-glow {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(57, 211, 83, 0.5); }
+          50% { box-shadow: 0 0 16px 4px rgba(57, 211, 83, 0.7); }
         }
         button { transition: opacity 0.1s, transform 0.1s; }
         button:active:not(:disabled) { transform: scale(0.97); }
@@ -978,7 +981,7 @@ function SetupScreen({ playerCount, setPlayerCount, customTime, setCustomTime, s
         <div style={{ fontSize: '13px', lineHeight: '1.75', color: '#c9d1d9', fontFamily: "'Pretendard', sans-serif" }}>
           <div><span style={{ color: '#39d353', fontFamily: "'JetBrains Mono', monospace", marginRight: '8px' }}>01</span>휴대폰 한 대를 폭탄처럼 돌립니다</div>
           <div><span style={{ color: '#39d353', fontFamily: "'JetBrains Mono', monospace", marginRight: '8px' }}>02</span>화면에 뜬 미션 사진을 빨리 찍어요</div>
-          <div><span style={{ color: '#39d353', fontFamily: "'JetBrains Mono', monospace", marginRight: '8px' }}>03</span>"통과!" 외치고 옆 사람에게 패스</div>
+          <div><span style={{ color: '#39d353', fontFamily: "'JetBrains Mono', monospace", marginRight: '8px' }}>03</span>옆 사람에게 "통과!" 검사받기</div>
           <div><span style={{ color: '#f85149', fontFamily: "'JetBrains Mono', monospace", marginRight: '8px' }}>04</span><span style={{ color: '#f85149' }}>들고 있을 때 터지면 폭탄 +1</span></div>
           <div><span style={{ color: '#39d353', fontFamily: "'JetBrains Mono', monospace", marginRight: '8px' }}>05</span>셀카 미션은 카메라의 <span style={{ color: '#39d353' }}>🔄</span> 버튼</div>
           <div><span style={{ color: '#39d353', fontFamily: "'JetBrains Mono', monospace", marginRight: '8px' }}>06</span>스킵 1번 + 별로면 되돌리기 가능</div>
@@ -1420,11 +1423,11 @@ function MissionScreen({
             onClick={handleShutter}
             style={{
               ...styles.btn,
-              ...(isDanger ? styles.btnDanger : {}),
               flex: 2,
+              animation: isDanger ? 'urgent-glow 0.6s ease-in-out infinite' : 'none',
             }}
           >
-            ▸ {isDanger ? '빨리 찍어' : '찰칵'}
+            📸 {isDanger ? '빨리 찍어!' : '찰칵'}
           </button>
         </div>
 
@@ -1599,7 +1602,7 @@ function PhotoConfirmScreen({
             fontFamily: "'Pretendard', sans-serif",
           }}
         >
-          다 같이 보고 <span style={{ color: '#39d353', fontWeight: 700 }}>"통과!"</span> 외치고 옆 사람에게
+          옆 사람에게 보여주고 <span style={{ color: '#58a6ff', fontWeight: 700 }}>"통과!"</span> 검사받기
         </div>
 
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -1611,7 +1614,7 @@ function PhotoConfirmScreen({
           </button>
           <button
             onClick={handlePass}
-            style={{ ...styles.btn, ...(isDanger ? styles.btnDanger : {}), flex: 2 }}
+            style={{ ...styles.btn, ...styles.btnPass, flex: 2 }}
           >
             ▸ 통과! 옆 사람에게
           </button>
