@@ -342,10 +342,16 @@ const getRoundDuration = (playerCount) => {
   return randomInt(cfg.safe, cfg.max);
 };
 
+// 광배월드에서 ?count=N 으로 넘어오면 인원수 초기값으로 (3~10), 없으면 5
+const getInitialPlayerCount = () => {
+  const n = parseInt(new URLSearchParams(window.location.search).get('count'), 10);
+  return Number.isNaN(n) ? 5 : Math.min(10, Math.max(3, n));
+};
+
 // ========== 컴포넌트 ==========
 function App() {
   const [phase, setPhase] = useState('setup'); // setup, ready, mission, photo, explode, gameover
-  const [playerCount, setPlayerCount] = useState(5);
+  const [playerCount, setPlayerCount] = useState(getInitialPlayerCount);
   const [customTime, setCustomTime] = useState(60); // 기본 커스텀 60초. null이면 인원별 자동
   const [mission, setMission] = useState(null);
   // 폭탄 타이머: 게임 시작 시점에 한 번만 정해지고, 패스해도 리셋 안 됨
@@ -1989,5 +1995,6 @@ function ShareAllButton({ photoGallery }) {
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
+  <script src="https://kwangbban.vercel.app/hub.js" defer></script>
 </body>
 </html>
