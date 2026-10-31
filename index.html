@@ -362,6 +362,16 @@ const SAVED = (() => {
 })();
 const saved = (k, d) => (SAVED && SAVED[k] !== undefined ? SAVED[k] : d);
 
+// 아직 안 나온 미션 큐는 판(sid)과 상관없이 이 폰에 계속 저장 → 다시 하기/말랑월드에서 다시 켜도 나온 미션은 다 쓸 때까지 안 나옴
+const QUEUE_KEY = 'shutter-missions';
+const loadLeftoverQueue = () => {
+  try {
+    const byText = new Map(MISSIONS.map((m) => [m.text, m]));
+    const texts = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
+    return Array.isArray(texts) ? texts.map((t) => byText.get(t)).filter(Boolean) : [];
+  } catch (e) { return []; }
+};
+
 // ========== 컴포넌트 ==========
 function App() {
   const [phase, setPhase] = useState(saved('phase', 'setup')); // setup, ready, mission, photo, explode, gameover
@@ -378,7 +388,7 @@ function App() {
   const [photoGallery, setPhotoGallery] = useState(saved('gallery', []));
   const [skipsLeft, setSkipsLeft] = useState(saved('skipsLeft', 0)); // 휴대폰 든 사람 스킵 권 (받을 때마다 1로 충전)
   const [prevMission, setPrevMission] = useState(saved('prevMission', null)); // 스킵 직전 미션 (되돌리기용)
-  const [missionQueue, setMissionQueue] = useState(saved('missionQueue', [])); // 셔플된 미션 큐. 한 판 동안 안 본 거 우선
+  const [missionQueue, setMissionQueue] = useState(() => saved('missionQueue', loadLeftoverQueue())); // 셔플된 미션 큐. 안 본 거 우선 (판이 바뀌어도 이어짐)
   const [facingMode, setFacingMode] = useState(saved('facingMode', 'environment')); // 'environment'(후면) | 'user'(셀카)
 
   // 진행 상태 저장 (사진은 용량이 커서 따로, 저장 공간이 모자라면 사진만 빠짐)
@@ -388,6 +398,9 @@ function App() {
         dangerThreshold, skipsLeft, prevMission, missionQueue, facingMode }));
     } catch (e) {}
   }, [phase, playerCount, customTime, mission, bombFuseTotal, bombIgnitedAt, dangerThreshold, skipsLeft, prevMission, missionQueue, facingMode]);
+  useEffect(() => {
+    try { localStorage.setItem(QUEUE_KEY, JSON.stringify(missionQueue.map((m) => m.text))); } catch (e) {}
+  }, [missionQueue]);
   useEffect(() => {
     try { sessionStorage.setItem(SAVE_KEY + ':photos', JSON.stringify(photoGallery)); }
     catch (e) { try { sessionStorage.removeItem(SAVE_KEY + ':photos'); } catch (e2) {} }
@@ -564,7 +577,7 @@ function App() {
   // ========== 게임 로직 ==========
   const startGame = () => {
     setPhotoGallery([]);
-    setMissionQueue(shuffle(MISSIONS)); // 한 판 시작 시 미션 셔플
+    setMissionQueue((q) => (q.length ? q : shuffle(MISSIONS))); // 남은 미션 이어서, 다 썼으면 새로 셔플
     setPhase('ready');
   };
 
@@ -675,7 +688,6 @@ function App() {
     setPhotoGallery([]);
     setSkipsLeft(0);
     setPrevMission(null);
-    setMissionQueue([]);
     setFacingMode('environment');
   };
 
