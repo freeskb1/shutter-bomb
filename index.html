@@ -348,24 +348,50 @@ const getInitialPlayerCount = () => {
   return Number.isNaN(n) ? 5 : Math.min(10, Math.max(3, n));
 };
 
+// 새로고침(당겨서 새로고침 포함)해도 하던 판이 이어지게 탭 단위로 저장. 폭탄은 점화 시각 기준이라 그대로 굴러감
+// 말랑월드 판(sid)마다 따로 저장해서, 새 판으로 넘어오면 예전 판이 살아나지 않게
+const SAVE_KEY = 'shutter-game:' + (new URLSearchParams(window.location.search).get('sid') || '');
+const SAVED = (() => {
+  try {
+    const s = JSON.parse(sessionStorage.getItem(SAVE_KEY) || 'null');
+    if (!s || !s.phase || s.phase === 'setup') return null;
+    s.gallery = JSON.parse(sessionStorage.getItem(SAVE_KEY + ':photos') || '[]');
+    if (s.phase === 'photo') { s.photo = (s.gallery[s.gallery.length - 1] || {}).photo || null; if (!s.photo) s.phase = 'mission'; }
+    return s;
+  } catch (e) { return null; }
+})();
+const saved = (k, d) => (SAVED && SAVED[k] !== undefined ? SAVED[k] : d);
+
 // ========== 컴포넌트 ==========
 function App() {
-  const [phase, setPhase] = useState('setup'); // setup, ready, mission, photo, explode, gameover
-  const [playerCount, setPlayerCount] = useState(getInitialPlayerCount);
+  const [phase, setPhase] = useState(saved('phase', 'setup')); // setup, ready, mission, photo, explode, gameover
+  const [playerCount, setPlayerCount] = useState(() => saved('playerCount', getInitialPlayerCount()));
   // 기본 커스텀 60초. null이면 인원별 자동 (말랑월드에서 인원수가 넘어오면 자동으로 시작)
-  const [customTime, setCustomTime] = useState(() => new URLSearchParams(window.location.search).has('count') ? null : 60);
-  const [mission, setMission] = useState(null);
+  const [customTime, setCustomTime] = useState(() => saved('customTime', new URLSearchParams(window.location.search).has('count') ? null : 60));
+  const [mission, setMission] = useState(saved('mission', null));
   // 폭탄 타이머: 게임 시작 시점에 한 번만 정해지고, 패스해도 리셋 안 됨
-  const [bombFuseTotal, setBombFuseTotal] = useState(0); // 이번 게임 폭탄 전체 시간(초)
-  const [bombIgnitedAt, setBombIgnitedAt] = useState(null); // 점화 시각 (Date.now())
+  const [bombFuseTotal, setBombFuseTotal] = useState(saved('bombFuseTotal', 0)); // 이번 게임 폭탄 전체 시간(초)
+  const [bombIgnitedAt, setBombIgnitedAt] = useState(saved('bombIgnitedAt', null)); // 점화 시각 (Date.now())
   const [bombRemainingTick, setBombRemainingTick] = useState(0); // 매 100ms 갱신, 위험 단계 판정용
-  const [dangerThreshold, setDangerThreshold] = useState(15); // 폭발 N초 전부터 경고 (게임마다 랜덤)
-  const [photo, setPhoto] = useState(null);
-  const [photoGallery, setPhotoGallery] = useState([]);
-  const [skipsLeft, setSkipsLeft] = useState(0); // 휴대폰 든 사람 스킵 권 (받을 때마다 1로 충전)
-  const [prevMission, setPrevMission] = useState(null); // 스킵 직전 미션 (되돌리기용)
-  const [missionQueue, setMissionQueue] = useState([]); // 셔플된 미션 큐. 한 판 동안 안 본 거 우선
-  const [facingMode, setFacingMode] = useState('environment'); // 'environment'(후면) | 'user'(셀카)
+  const [dangerThreshold, setDangerThreshold] = useState(saved('dangerThreshold', 15)); // 폭발 N초 전부터 경고 (게임마다 랜덤)
+  const [photo, setPhoto] = useState(saved('photo', null));
+  const [photoGallery, setPhotoGallery] = useState(saved('gallery', []));
+  const [skipsLeft, setSkipsLeft] = useState(saved('skipsLeft', 0)); // 휴대폰 든 사람 스킵 권 (받을 때마다 1로 충전)
+  const [prevMission, setPrevMission] = useState(saved('prevMission', null)); // 스킵 직전 미션 (되돌리기용)
+  const [missionQueue, setMissionQueue] = useState(saved('missionQueue', [])); // 셔플된 미션 큐. 한 판 동안 안 본 거 우선
+  const [facingMode, setFacingMode] = useState(saved('facingMode', 'environment')); // 'environment'(후면) | 'user'(셀카)
+
+  // 진행 상태 저장 (사진은 용량이 커서 따로, 저장 공간이 모자라면 사진만 빠짐)
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(SAVE_KEY, JSON.stringify({ phase, playerCount, customTime, mission, bombFuseTotal, bombIgnitedAt,
+        dangerThreshold, skipsLeft, prevMission, missionQueue, facingMode }));
+    } catch (e) {}
+  }, [phase, playerCount, customTime, mission, bombFuseTotal, bombIgnitedAt, dangerThreshold, skipsLeft, prevMission, missionQueue, facingMode]);
+  useEffect(() => {
+    try { sessionStorage.setItem(SAVE_KEY + ':photos', JSON.stringify(photoGallery)); }
+    catch (e) { try { sessionStorage.removeItem(SAVE_KEY + ':photos'); } catch (e2) {} }
+  }, [photoGallery]);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -652,6 +678,12 @@ function App() {
     setMissionQueue([]);
     setFacingMode('environment');
   };
+
+  // 새로고침으로 미션 화면에 복귀했으면 카메라 다시 켜기
+  useEffect(() => {
+    if (SAVED && SAVED.phase === 'mission') setTimeout(() => startCamera(), 100);
+    // eslint-disable-next-line
+  }, []);
 
   // ========== 정리 ==========
   useEffect(() => {
