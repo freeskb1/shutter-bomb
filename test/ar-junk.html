@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#05060f">
+<title>우주 쓰레기 줍기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&display=swap" rel="stylesheet">
+<!-- QR 인식: jsQR 1.4.0 (버전 고정) -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<style>
+  [hidden]{display:none!important}
+
+  :root{
+    --bg:#05060f;
+    --ink:#eaf2ff;
+    --dim:#8fa3c8;
+    --hud:#7cf7ff;
+    --yellow:#ffd43b;
+    --red:#ff5c7a;
+    --green:#5cffb0;
+    --panel:rgba(8,14,32,.78);
+    --line:rgba(124,247,255,.45);
+    --title:'Black Han Sans','Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;
+    --body:'Do Hyeon','Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;
+    --sat:env(safe-area-inset-top,0px);
+    --sab:env(safe-area-inset-bottom,0px);
+    --sal:env(safe-area-inset-left,0px);
+    --sar:env(safe-area-inset-right,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);overflow:hidden;
+    font-family:var(--body);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+    overscroll-behavior:none;touch-action:none}
+
+  /* ---------- 배경: 카메라 / 별 ---------- */
+  #cam,#stars{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+  #cam{object-fit:cover;background:#000}
+  #stars{background:radial-gradient(ellipse at 50% 30%,#141a3d 0%,#070916 60%,#03040a 100%)}
+  #tint{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(ellipse at center,rgba(5,6,15,0) 55%,rgba(5,6,15,.55) 100%)}
+
+  /* ---------- AR 레이어 ---------- */
+  #world{position:fixed;inset:0;z-index:2;overflow:hidden}
+  .junk{position:absolute;left:0;top:0;width:110px;height:110px;margin:-55px 0 0 -55px;
+    will-change:transform;cursor:pointer}
+  .junk .float{position:absolute;inset:0;animation:bob 2.6s ease-in-out infinite}
+  .junk .glow{position:absolute;inset:14px;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,212,59,.55) 0%,rgba(255,212,59,.18) 45%,rgba(255,212,59,0) 70%);
+    animation:pulse 1.6s ease-in-out infinite}
+  .junk .ring{position:absolute;inset:6px;border-radius:50%;border:3px dashed var(--yellow);
+    opacity:.85;animation:spin 6s linear infinite;box-shadow:0 0 14px rgba(255,212,59,.5)}
+  .junk .emo{position:absolute;inset:0;display:grid;place-items:center;font-size:50px;line-height:1;
+    filter:drop-shadow(0 0 8px rgba(255,212,59,.9)) drop-shadow(0 3px 0 rgba(0,0,0,.6));
+    animation:wobble 3.4s ease-in-out infinite}
+  .junk.got{pointer-events:none}
+  .junk.got .float{animation:gone .55s ease-in forwards}
+  .pop{position:absolute;left:0;top:0;z-index:3;font-family:var(--title);font-size:30px;color:var(--yellow);
+    -webkit-text-stroke:1.5px #000;pointer-events:none;animation:popup .8s ease-out forwards}
+  @keyframes bob{0%,100%{transform:translateY(-6px)}50%{transform:translateY(6px)}}
+  @keyframes pulse{0%,100%{transform:scale(.9);opacity:.8}50%{transform:scale(1.1);opacity:1}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes wobble{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+  @keyframes gone{0%{transform:scale(1);opacity:1}35%{transform:scale(1.35);opacity:1}100%{transform:scale(0) rotate(200deg);opacity:0}}
+  @keyframes popup{0%{transform:translate(-50%,-50%) translateY(0);opacity:1}100%{transform:translate(-50%,-50%) translateY(-60px);opacity:0}}
+
+  /* 화면 밖 화살표 */
+  #arrow{position:fixed;left:0;top:0;z-index:4;width:54px;height:54px;margin:-27px 0 0 -27px;pointer-events:none;
+    will-change:transform}
+  #arrow svg{width:100%;height:100%;filter:drop-shadow(0 0 8px rgba(255,212,59,.8));animation:nudge .9s ease-in-out infinite}
+  @keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
+
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;left:0;right:0;top:0;z-index:5;pointer-events:none;
+    padding:calc(var(--sat) + 8px) calc(var(--sar) + 14px) 0 calc(var(--sal) + 14px)}
+  #diag{font-size:13px;line-height:1.35;color:var(--hud);background:rgba(0,0,0,.55);border:1px solid var(--line);
+    border-radius:8px;padding:5px 9px;margin-bottom:8px;letter-spacing:.2px;word-break:keep-all}
+  #diag b{color:#fff;font-weight:normal}
+  #diag .bad{color:var(--red)}
+  #diag .ok{color:var(--green)}
+  .bar-row{display:flex;align-items:center;gap:10px}
+  #count{font-family:var(--title);font-size:30px;color:var(--yellow);-webkit-text-stroke:1px #000;
+    text-shadow:0 3px 0 #000;white-space:nowrap}
+  #count small{font-size:20px;color:var(--ink)}
+  .progress{flex:1;height:16px;border:3px solid #000;border-radius:10px;background:rgba(0,0,0,.55);
+    overflow:hidden;box-shadow:0 3px 0 #000}
+  .progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffb703,var(--yellow));
+    transition:width .35s cubic-bezier(.3,1.6,.5,1)}
+  #timer{font-family:var(--title);font-size:18px;color:var(--ink);text-shadow:0 2px 0 #000;min-width:52px;text-align:right}
+
+  /* 하단 안내 */
+  #tip{position:fixed;left:0;right:0;bottom:0;z-index:5;pointer-events:none;text-align:center;
+    padding:0 calc(var(--sar) + 16px) calc(var(--sab) + 18px) calc(var(--sal) + 16px)}
+  #tip span{display:inline-block;background:var(--panel);border:2px solid var(--line);border-radius:14px;
+    padding:9px 14px;font-size:18px;line-height:1.35;word-break:keep-all;box-shadow:0 0 18px rgba(124,247,255,.15)}
+  #tip span.warn{border-color:var(--yellow);color:var(--yellow)}
+
+  /* ---------- QR 스캔 패널 ---------- */
+  #scan{position:fixed;inset:0;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    pointer-events:none;padding:calc(var(--sat) + 70px) calc(var(--sar) + 20px) calc(var(--sab) + 30px) calc(var(--sal) + 20px)}
+  #scan h2{margin:0 0 6px;font-family:var(--title);font-weight:normal;font-size:28px;color:var(--yellow);
+    -webkit-text-stroke:1px #000;text-shadow:0 3px 0 #000;text-align:center}
+  #scan .sub{margin:0 0 18px;font-size:19px;text-align:center;text-shadow:0 2px 4px #000;word-break:keep-all}
+  .frame{position:relative;width:min(68vw,300px);aspect-ratio:1/1}
+  .frame::before,.frame::after,.frame i::before,.frame i::after{content:"";position:absolute;width:44px;height:44px;
+    border:5px solid var(--hud);filter:drop-shadow(0 0 6px rgba(124,247,255,.8))}
+  .frame::before{left:0;top:0;border-right:0;border-bottom:0;border-radius:14px 0 0 0}
+  .frame::after{right:0;top:0;border-left:0;border-bottom:0;border-radius:0 14px 0 0}
+  .frame i::before{left:0;bottom:0;border-right:0;border-top:0;border-radius:0 0 0 14px}
+  .frame i::after{right:0;bottom:0;border-left:0;border-top:0;border-radius:0 0 14px 0}
+  .frame .scanline{position:absolute;left:8%;right:8%;height:3px;top:10%;border-radius:2px;
+    background:var(--hud);box-shadow:0 0 12px 2px rgba(124,247,255,.8);animation:scanmove 2s ease-in-out infinite alternate}
+  @keyframes scanmove{to{top:88%}}
+  #scanMsg{margin-top:18px;min-height:30px;font-size:20px;text-align:center;text-shadow:0 2px 4px #000;word-break:keep-all}
+  #scanMsg.err{color:var(--red)}
+  #scanMsg.ok{color:var(--green)}
+  #scanMsg span{display:inline-block;background:rgba(0,0,0,.6);border-radius:10px;padding:6px 12px}
+  #scan .btn{pointer-events:auto;margin-top:14px}
+  #scan.flash .frame::before,#scan.flash .frame::after,#scan.flash .frame i::before,#scan.flash .frame i::after{border-color:var(--green)}
+
+  /* ---------- 오버레이 (시작 / 완료) ---------- */
+  .overlay{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;background:radial-gradient(ellipse at 50% 20%,#1a2150 0%,#0a0d22 55%,#04050c 100%);
+    padding:calc(var(--sat) + 24px) calc(var(--sar) + 22px) calc(var(--sab) + 18px) calc(var(--sal) + 22px);overflow:hidden}
+  .overlay.glass{background:rgba(4,6,16,.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+  .badge{display:inline-block;font-size:15px;letter-spacing:2px;color:var(--hud);border:2px solid var(--line);
+    border-radius:999px;padding:4px 12px;margin-bottom:14px}
+  .overlay h1{margin:0;font-family:var(--title);font-weight:normal;font-size:clamp(40px,12vw,58px);line-height:1.05;
+    color:var(--yellow);-webkit-text-stroke:2px #000;text-shadow:0 5px 0 #000,0 0 30px rgba(255,212,59,.35)}
+  .hero{font-size:64px;margin:6px 0 10px;filter:drop-shadow(0 0 14px rgba(255,212,59,.7));animation:bob 2.6s ease-in-out infinite}
+  .steps{margin:18px 0 26px;padding:0;list-style:none;text-align:left;max-width:340px;width:100%}
+  .steps li{display:flex;gap:10px;align-items:flex-start;font-size:19px;line-height:1.35;margin:9px 0;word-break:keep-all}
+  .steps li b{flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;
+    background:var(--yellow);color:#000;border:2px solid #000;font-family:var(--title);font-weight:normal;font-size:16px}
+  .btn{appearance:none;-webkit-appearance:none;font-family:var(--title);font-size:24px;color:#111;
+    background:var(--yellow);border:4px solid #000;border-radius:18px;padding:14px 34px;
+    box-shadow:0 7px 0 #000;transform:translateY(0);transition:transform .06s,box-shadow .06s;cursor:pointer;touch-action:manipulation}
+  .btn:active,.btn.pressed{transform:translateY(7px);box-shadow:0 0 0 #000}
+  .btn.ghost{background:#dfe7ff;font-size:17px;padding:9px 18px;border-width:3px;box-shadow:0 5px 0 #000}
+  .btn.ghost:active{transform:translateY(5px);box-shadow:0 0 0 #000}
+  .btn.big{min-width:220px}
+  #env{position:absolute;left:0;right:0;bottom:0;padding:0 calc(var(--sar) + 12px) calc(var(--sab) + 10px) calc(var(--sal) + 12px);
+    font-size:12.5px;line-height:1.4;color:var(--dim);word-break:keep-all}
+  #env .ok{color:var(--green)} #env .bad{color:var(--red)}
+  .roomtag{margin-top:2px;font-size:20px;color:var(--ink)}
+  .roomtag b{color:var(--hud);font-weight:normal}
+  #doneTime{font-family:var(--title);font-size:56px;color:#fff;-webkit-text-stroke:2px #000;text-shadow:0 5px 0 #000;margin:10px 0 2px}
+  #doneSub{font-size:19px;color:var(--dim);margin-bottom:26px}
+  #done h1{color:var(--green)}
+  .confetti{position:absolute;top:-30px;font-size:26px;animation:fall linear forwards;pointer-events:none}
+  @keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+
+  /* 수거함 단계: 스캔 패널 색 변경 */
+  #scan.bin .frame::before,#scan.bin .frame::after,#scan.bin .frame i::before,#scan.bin .frame i::after{border-color:var(--yellow);
+    filter:drop-shadow(0 0 6px rgba(255,212,59,.8))}
+  #scan.bin .scanline{background:var(--yellow);box-shadow:0 0 12px 2px rgba(255,212,59,.8)}
+</style>
+</head>
+<body>
+
+<video id="cam" playsinline muted autoplay hidden></video>
+<canvas id="stars"></canvas>
+<div id="tint"></div>
+
+<div id="world"></div>
+<div id="arrow" hidden>
+  <svg viewBox="0 0 54 54"><path d="M14 9 L46 27 L14 45 L22 27 Z" fill="#ffd43b" stroke="#000" stroke-width="3.5" stroke-linejoin="round"/></svg>
+</div>
+
+<div id="hud" hidden>
+  <div id="diag" hidden></div>
+  <div class="bar-row" id="progressRow" hidden>
+    <div id="count">0 <small>/ 5</small></div>
+    <div class="progress"><i id="bar"></i></div>
+    <div id="timer">0:00</div>
+  </div>
+</div>
+
+<div id="scan" hidden>
+  <h2 id="scanTitle">방 QR을 찍으세요</h2>
+  <p class="sub" id="scanSub"></p>
+  <div class="frame"><i></i><div class="scanline"></div></div>
+  <div id="scanMsg"></div>
+  <button class="btn ghost" id="skipQr" hidden>카메라 없이 테스트 진행</button>
+</div>
+
+<div id="tip" hidden><span id="tipText"></span></div>
+
+<!-- 시작 화면 -->
+<section class="overlay" id="start">
+  <div class="badge">AR MISSION · 리얼 어몽어스</div>
+  <div class="hero">🛰️</div>
+  <h1>우주 쓰레기<br>줍기</h1>
+  <div class="roomtag" id="startRoom"></div>
+  <ol class="steps">
+    <li><b>1</b><span>이 방에 붙은 <u>방 QR</u>을 카메라로 찍어요</span></li>
+    <li><b>2</b><span>휴대폰을 들고 빙 둘러보며 떠다니는 쓰레기 5개를 터치해 주워요</span></li>
+    <li><b>3</b><span>다 주우면 같은 방 QR을 다시 찍어 수거함에 버려요</span></li>
+  </ol>
+  <button class="btn big" id="startBtn">시작</button>
+  <div id="env"></div>
+</section>
+
+<!-- 완료 화면 -->
+<section class="overlay glass" id="done" hidden>
+  <div class="badge">MISSION COMPLETE</div>
+  <h1>미션 완료!</h1>
+  <div id="doneTime">0:00</div>
+  <div id="doneSub">걸린 시간</div>
+  <button class="btn big" id="againBtn">다시 하기</button>
+</section>
+
+<script>
+(() => {
+  'use strict';
+
+  // ===== 설정 =====
+  const QR_PREFIX = 'MALLANG-AU:room:';
+  const ROOM_NAMES = { living: '거실', room3: '침실3', balcony: '발코니' };
+  const JUNK_COUNT = 5;
+  const EMOJIS = ['🛰️','🔩','🥫','⚙️','🪫','📡'];
+  const VFOV = 62;                 // 세로 시야각
+  const SMOOTH = 0.22;             // 보간 계수 (프레임당)
+  const SENSOR_WAIT_MS = 2500;     // 이 시간 동안 센서 이벤트가 없으면 드래그 모드
+
+  const params = new URLSearchParams(location.search);
+  let targetRoom = (params.get('room') || '').trim() || null;
+  const roomLabel = id => ROOM_NAMES[id] ? `${ROOM_NAMES[id]} (${id})` : id;
+
+  // ===== DOM =====
+  const $ = id => document.getElementById(id);
+  const cam = $('cam'), stars = $('stars'), world = $('world'), arrow = $('arrow');
+  const hud = $('hud'), diag = $('diag'), progressRow = $('progressRow');
+  const countEl = $('count'), bar = $('bar'), timerEl = $('timer');
+  const scan = $('scan'), scanTitle = $('scanTitle'), scanSub = $('scanSub'), scanMsg = $('scanMsg'), skipQr = $('skipQr');
+  const tip = $('tip'), tipText = $('tipText');
+  const startScr = $('start'), startBtn = $('startBtn'), env = $('env'), startRoom = $('startRoom');
+  const doneScr = $('done'), doneTime = $('doneTime'), againBtn = $('againBtn');
+
+  // ===== 상태 =====
+  const S = {
+    stage: 'start',          // start | scan | collect | bin | done
+    camOk: false, camResult: '-',
+    permResult: '-',
+    sensorEvents: 0,
+    rawYaw: null, rawPitch: null,
+    viewYaw: 0, viewPitch: 0,      // 보간된 현재 시선
+    dragMode: false,
+    baseYaw: 0,
+    junks: [],
+    got: 0,
+    t0: 0,
+    W: innerWidth, H: innerHeight,
+  };
+
+  // ===== 시작 화면 환경 점검 =====
+  (function envCheck(){
+    let inIframe;
+    try { inIframe = window.self !== window.top; } catch(e) { inIframe = true; }
+    const gum = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    const doe = typeof window.DeviceOrientationEvent !== 'undefined';
+    const doePerm = doe && typeof DeviceOrientationEvent.requestPermission === 'function';
+    const f = (ok, txt) => `<span class="${ok?'ok':'bad'}">${txt}</span>`;
+    env.innerHTML =
+      `환경 점검 · iframe ${inIframe ? f(false,'안쪽') : f(true,'아님')}` +
+      ` · isSecureContext ${f(window.isSecureContext, String(window.isSecureContext))}` +
+      ` · getUserMedia ${f(gum, gum?'지원':'없음')}` +
+      ` · DeviceOrientationEvent ${f(doe, doe ? (doePerm?'지원(권한 필요)':'지원') : '없음')}`;
+    startRoom.innerHTML = targetRoom
+      ? `이번 미션 장소: <b>${escapeHtml(roomLabel(targetRoom))}</b>`
+      : `<span style="color:var(--dim)">방 지정 없음 · 처음 찍은 방으로 진행</span>`;
+  })();
+
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  // ===== 사운드 (WebAudio) =====
+  let actx = null;
+  function unlockAudio(){
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!actx) actx = new AC();
+      if (actx.state === 'suspended') actx.resume();
+      // iOS 무음 버퍼로 잠금 해제
+      const b = actx.createBuffer(1, 1, 22050), s = actx.createBufferSource();
+      s.buffer = b; s.connect(actx.destination); s.start(0);
+    } catch(e) {}
+  }
+  function tone(freq, start, dur, type='square', vol=0.12, slideTo=null){
+    if (!actx) return;
+    const t = actx.currentTime + start;
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  const sfx = {
+    collect(n){ const b = 660 + n*60; tone(b,0,.09,'square',.11); tone(b*1.5,.07,.14,'square',.1); tone(b*2,.15,.18,'triangle',.08); },
+    scanOk(){ tone(880,0,.08,'sine',.15); tone(1320,.08,.14,'sine',.13); },
+    wrong(){ tone(220,0,.18,'sawtooth',.08,140); },
+    done(){ [523,659,784,1047].forEach((f,i)=>tone(f,i*.11,.22,'triangle',.13)); tone(1568,.48,.4,'sine',.1); },
+  };
+
+  // ===== 시작 =====
+  startBtn.addEventListener('click', () => {
+    unlockAudio();
+
+    // 1) iOS 센서 권한 — 반드시 탭 핸들러 안에서 동기 호출
+    let permP;
+    if (typeof window.DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try {
+        permP = DeviceOrientationEvent.requestPermission()
+          .then(r => r, e => '에러:' + (e && e.name || e));
+      } catch(e) { permP = Promise.resolve('에러:' + (e && e.name || e)); }
+    } else if (typeof window.DeviceOrientationEvent !== 'undefined') {
+      permP = Promise.resolve('불필요');
+    } else {
+      permP = Promise.resolve('미지원');
+    }
+
+    // 2) 후면 카메라 — 같은 핸들러에서 바로 호출
+    let camP;
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      camP = navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    } else {
+      camP = Promise.reject({ name: window.isSecureContext ? 'getUserMedia 없음' : 'https 아님' });
+    }
+
+    startBtn.disabled = true;
+    startBtn.textContent = '준비 중…';
+
+    permP.then(r => {
+      S.permResult = r;
+      window.addEventListener('deviceorientation', onOrient, true);
+    });
+
+    camP.then(stream => {
+      cam.srcObject = stream;
+      cam.hidden = false;
+      const p = cam.play(); if (p && p.catch) p.catch(()=>{});
+      S.camOk = true; S.camResult = '허용';
+      stars.hidden = true;
+    }, err => {
+      S.camOk = false; S.camResult = (err && err.name) || String(err);
+      cam.hidden = true;
+      stars.hidden = false;
+    }).finally(() => {
+      startScr.hidden = true;
+      hud.hidden = false;
+      setTimeout(() => { diag.hidden = false; renderDiag(); }, 1000);
+      setInterval(renderDiag, 500);
+      enterScan();
+      requestAnimationFrame(loop);
+    });
+  });
+
+  function renderDiag(){
+    if (diag.hidden) return;
+    const camCls = S.camOk ? 'ok' : 'bad';
+    const permCls = (S.permResult === 'granted' || S.permResult === '불필요') ? 'ok' : 'bad';
+    const evCls = S.sensorEvents > 0 ? 'ok' : 'bad';
+    diag.innerHTML =
+      `카메라 <span class="${camCls}">${escapeHtml(S.camResult)}</span>` +
+      ` · 센서권한 <span class="${permCls}">${escapeHtml(S.permResult)}</span>` +
+      ` · 센서이벤트 <span class="${evCls}">${S.sensorEvents > 0 ? '수신 ' + S.sensorEvents : '없음'}</span>` +
+      (S.dragMode ? ` · <b>드래그 모드</b>` : '');
+  }
+
+  // ===== 기기 방향 =====
+  function onOrient(e){
+    if (e.alpha == null && e.webkitCompassHeading == null) return;   // 데스크톱 빈 이벤트 무시
+    let yaw;
+    if (typeof e.webkitCompassHeading === 'number' && e.webkitCompassHeading >= 0) yaw = e.webkitCompassHeading;
+    else yaw = 360 - (e.alpha || 0);
+    const pitch = (e.beta == null ? 90 : e.beta) - 90;
+    S.rawYaw = norm360(yaw);
+    S.rawPitch = clamp(pitch, -89, 89);
+    S.sensorEvents++;
+
+    // 드래그 모드였는데 센서가 살아나면 전환
+    if (S.dragMode) {
+      S.dragMode = false;
+      S.baseYaw = norm360(S.rawYaw - (S.viewYaw - S.baseYaw));  // 지금 보던 방향 유지
+      S.viewYaw = S.rawYaw; S.viewPitch = S.rawPitch;
+      if (S.stage === 'collect') showTip(collectTip());
+    }
+  }
+
+  // ===== 드래그로 둘러보기 (대체 모드) =====
+  let drag = null, movedSinceDown = 0;
+  world.addEventListener('pointerdown', e => {
+    drag = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    movedSinceDown = 0;
+  });
+  window.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    movedSinceDown += Math.abs(dx) + Math.abs(dy);
+    drag.x = e.clientX; drag.y = e.clientY;
+    if (!S.dragMode) return;
+    const hfov = VFOV * S.W / S.H;
+    S.viewYaw = norm360(S.viewYaw - dx * hfov / S.W);
+    S.viewPitch = clamp(S.viewPitch + dy * VFOV / S.H, -70, 70);
+  }, { passive: true });
+  const endDrag = e => { if (drag && e.pointerId === drag.id) drag = null; };
+  window.addEventListener('pointerup', endDrag);
+  window.addEventListener('pointercancel', endDrag);
+
+  // ===== 단계 1 / 3: QR 스캔 =====
+  const qrCanvas = document.createElement('canvas');
+  const qrCtx = qrCanvas.getContext('2d', { willReadFrequently: true });
+  let scanTimer = null, lastMsgAt = 0, scanLock = false;
+
+  function enterScan(){
+    S.stage = 'scan';
+    scan.hidden = false; scan.classList.remove('bin');
+    scanTitle.textContent = '방 QR을 찍으세요';
+    scanSub.innerHTML = targetRoom
+      ? `<b style="color:var(--hud)">${escapeHtml(roomLabel(targetRoom))}</b> 에 붙은 QR을 네모 안에 비춰 주세요`
+      : '미션을 할 방의 QR을 네모 안에 비춰 주세요';
+    setScanMsg('');
+    skipQr.hidden = S.camOk;
+    if (!S.camOk) setScanMsg('카메라를 못 켜서 QR을 찍을 수 없어요. 아래 버튼으로 테스트할 수 있어요.', 'err');
+    progressRow.hidden = true;
+    hideTip();
+    startScanLoop();
+  }
+
+  function enterBin(){
+    S.stage = 'bin';
+    scan.hidden = false; scan.classList.add('bin');
+    scanTitle.textContent = '수거함에 버리기';
+    scanSub.innerHTML = `이 방 QR을 다시 찍으세요<br><span style="color:var(--dim)">${escapeHtml(roomLabel(targetRoom))}</span>`;
+    setScanMsg('');
+    skipQr.hidden = S.camOk;
+    arrow.hidden = true;
+    hideTip();
+    startScanLoop();
+  }
+
+  function setScanMsg(text, cls){
+    scanMsg.className = cls || '';
+    scanMsg.innerHTML = text ? `<span>${text}</span>` : '';
+  }
+
+  function startScanLoop(){
+    stopScanLoop();
+    scanLock = false;
+    if (!S.camOk) return;
+    const tick = () => {
+      scanTimer = setTimeout(tick, 180);
+      if (scanLock || (S.stage !== 'scan' && S.stage !== 'bin')) return;
+      if (!cam.videoWidth || cam.readyState < 2) return;
+      if (typeof window.jsQR !== 'function') { setScanMsg('QR 인식 라이브러리를 못 불러왔어요 (네트워크 확인)', 'err'); return; }
+      const vw = cam.videoWidth, vh = cam.videoHeight;
+      const scale = Math.min(1, 640 / Math.max(vw, vh));
+      const w = Math.round(vw * scale), h = Math.round(vh * scale);
+      if (qrCanvas.width !== w) qrCanvas.width = w;
+      if (qrCanvas.height !== h) qrCanvas.height = h;
+      qrCtx.drawImage(cam, 0, 0, w, h);
+      let code = null;
+      try { code = jsQR(qrCtx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'attemptBoth' }); } catch(e) {}
+      if (code && code.data) handleQr(code.data.trim());
+    };
+    tick();
+  }
+  function stopScanLoop(){ if (scanTimer) clearTimeout(scanTimer); scanTimer = null; }
+
+  function handleQr(text){
+    const now = performance.now();
+    if (!text.startsWith(QR_PREFIX)) {
+      if (now - lastMsgAt > 1500) { lastMsgAt = now; setScanMsg('말랑 방 QR이 아니에요', 'err'); }
+      return;
+    }
+    const room = text.slice(QR_PREFIX.length).trim();
+    if (!targetRoom && S.stage === 'scan') targetRoom = room;   // 방 지정이 없으면 처음 찍은 방
+    if (room !== targetRoom) {
+      if (now - lastMsgAt > 1500) {
+        lastMsgAt = now; sfx.wrong();
+        setScanMsg(`여기가 아니에요! 찍은 곳: ${escapeHtml(roomLabel(room))}<br>가야 할 곳: ${escapeHtml(roomLabel(targetRoom))}`, 'err');
+      }
+      return;
+    }
+    // 맞는 QR
+    scanLock = true;
+    sfx.scanOk();
+    scan.classList.add('flash');
+    setScanMsg(S.stage === 'scan' ? '확인! 쓰레기를 찾아요' : '수거 완료!', 'ok');
+    setTimeout(() => {
+      scan.classList.remove('flash');
+      if (S.stage === 'scan') beginCollect();
+      else if (S.stage === 'bin') finish();
+    }, 550);
+  }
+
+  skipQr.addEventListener('click', () => {
+    if (!targetRoom) targetRoom = 'room3';
+    if (S.stage === 'scan') beginCollect();
+    else if (S.stage === 'bin') finish();
+  });
+
+  // ===== 단계 2: 쓰레기 줍기 =====
+  function beginCollect(){
+    stopScanLoop();
+    scan.hidden = true;
+    S.stage = 'collect';
+    S.got = 0;
+    S.t0 = performance.now();
+
+    // 기준 방향 = 지금 보는 방향
+    if (S.rawYaw != null) {
+      S.dragMode = false;
+      S.baseYaw = S.rawYaw;
+      S.viewYaw = S.rawYaw; S.viewPitch = S.rawPitch;
+    } else {
+      S.baseYaw = 0; S.viewYaw = 0; S.viewPitch = 5;   // 쓰레기 높이(-15~25도)의 가운데
+      // 센서 이벤트를 조금 더 기다려 보고 없으면 드래그 모드
+      S.dragMode = true;
+    }
+
+    spawnJunks();
+    updateCount();
+    progressRow.hidden = false;
+    showTip(collectTip());
+
+    if (S.dragMode) {
+      setTimeout(() => { if (S.dragMode && S.stage === 'collect') showTip(collectTip()); }, SENSOR_WAIT_MS);
+    }
+  }
+
+  function collectTip(){
+    return S.dragMode
+      ? { text: '센서가 안 잡혀요 👆 화면을 손가락으로 끌어서 둘러보고, 쓰레기를 터치해 주으세요', warn: true }
+      : { text: '휴대폰을 들고 몸을 돌려 둘러보세요. 노란 쓰레기를 터치하면 주워요', warn: false };
+  }
+
+  function spawnJunks(){
+    world.innerHTML = '';
+    S.junks = [];
+    const emojis = shuffle(EMOJIS.slice()).slice(0, JUNK_COUNT);
+    const step = 360 / JUNK_COUNT;   // 72도
+    for (let i = 0; i < JUNK_COUNT; i++) {
+      const off = i * step + rand(-20, 20);
+      const pitch = rand(-15, 25);
+      const el = document.createElement('div');
+      el.className = 'junk';
+      el.innerHTML = `<div class="float" style="animation-delay:${(-Math.random()*2.6).toFixed(2)}s">
+        <div class="glow"></div><div class="ring" style="animation-duration:${(5+Math.random()*3).toFixed(1)}s"></div>
+        <div class="emo" style="animation-delay:${(-Math.random()*3).toFixed(2)}s">${emojis[i]}</div></div>`;
+      const j = { el, off, pitch, got: false, x: 0, y: 0 };
+      el.addEventListener('pointerup', ev => {
+        if (movedSinceDown > 14) return;      // 드래그였으면 무시
+        collect(j);
+      });
+      world.appendChild(el);
+      S.junks.push(j);
+    }
+  }
+
+  function collect(j){
+    if (j.got || S.stage !== 'collect') return;
+    j.got = true;
+    S.got++;
+    sfx.collect(S.got);
+    j.el.classList.add('got');
+    const pop = document.createElement('div');
+    pop.className = 'pop'; pop.textContent = '+1';
+    pop.style.left = j.x + 'px'; pop.style.top = (j.y - 30) + 'px';
+    world.appendChild(pop);
+    setTimeout(() => { j.el.remove(); pop.remove(); }, 800);
+    updateCount();
+    if (S.got >= JUNK_COUNT) setTimeout(enterBin, 700);
+  }
+
+  function updateCount(){
+    countEl.innerHTML = `${S.got} <small>/ ${JUNK_COUNT}</small>`;
+    bar.style.width = (S.got / JUNK_COUNT * 100) + '%';
+  }
+
+  // ===== 완료 =====
+  function finish(){
+    stopScanLoop();
+    S.stage = 'done';
+    scan.hidden = true;
+    hideTip();
+    const sec = Math.round((performance.now() - S.t0) / 1000);
+    doneTime.textContent = fmtTime(sec);
+    doneScr.hidden = false;
+    sfx.done();
+    confetti();
+  }
+
+  againBtn.addEventListener('click', () => {
+    unlockAudio();
+    doneScr.hidden = true;
+    doneScr.querySelectorAll('.confetti').forEach(c => c.remove());
+    world.innerHTML = '';
+    S.junks = [];
+    if (!params.get('room')) targetRoom = null;
+    enterScan();
+  });
+
+  function confetti(){
+    const items = ['⭐','✨','🛰️','🌟','💫'];
+    for (let i = 0; i < 26; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.textContent = items[i % items.length];
+      c.style.left = (Math.random() * 100) + '%';
+      c.style.animationDuration = (2.2 + Math.random() * 2) + 's';
+      c.style.animationDelay = (Math.random() * .8) + 's';
+      doneScr.appendChild(c);
+    }
+  }
+
+  // ===== 하단 안내 =====
+  function showTip(t){ tip.hidden = false; tipText.textContent = t.text; tipText.className = t.warn ? 'warn' : ''; }
+  function hideTip(){ tip.hidden = true; }
+
+  // ===== 별 배경 (카메라 실패 시) =====
+  const sctx = stars.getContext('2d');
+  const STARS = Array.from({ length: 260 }, () => ({
+    yaw: Math.random() * 360,
+    pitch: Math.asin(Math.random() * 2 - 1) * 180 / Math.PI,
+    r: Math.random() < .08 ? 1.8 + Math.random() : .5 + Math.random() * 1.1,
+    a: .35 + Math.random() * .65,
+    tw: Math.random() * Math.PI * 2,
+  }));
+  function resize(){
+    S.W = innerWidth; S.H = innerHeight;
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    stars.width = S.W * dpr; stars.height = S.H * dpr;
+    sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  addEventListener('resize', resize);
+  resize();
+
+  function drawStars(t, hfov){
+    sctx.clearRect(0, 0, S.W, S.H);
+    for (const s of STARS) {
+      const dy = wrap180(s.yaw - S.viewYaw), dp = s.pitch - S.viewPitch;
+      if (Math.abs(dy) > hfov * .6 || Math.abs(dp) > VFOV * .6) continue;
+      const x = S.W / 2 + dy / hfov * S.W, y = S.H / 2 - dp / VFOV * S.H;
+      sctx.globalAlpha = s.a * (.7 + .3 * Math.sin(t / 600 + s.tw));
+      sctx.fillStyle = '#fff';
+      sctx.beginPath(); sctx.arc(x, y, s.r, 0, Math.PI * 2); sctx.fill();
+    }
+    sctx.globalAlpha = 1;
+  }
+
+  // ===== 메인 루프: 각도 → 화면 좌표 =====
+  let lastTimerSec = -1;
+  function loop(t){
+    requestAnimationFrame(loop);
+    const hfov = VFOV * S.W / S.H;
+
+    // 센서 값으로 시선 보간
+    if (!S.dragMode && S.rawYaw != null) {
+      S.viewYaw = norm360(S.viewYaw + wrap180(S.rawYaw - S.viewYaw) * SMOOTH);
+      S.viewPitch = S.viewPitch + (S.rawPitch - S.viewPitch) * SMOOTH;
+    }
+
+    if (!S.camOk) drawStars(t, hfov);
+
+    if (S.stage === 'collect') {
+      const sec = Math.floor((performance.now() - S.t0) / 1000);
+      if (sec !== lastTimerSec) { lastTimerSec = sec; timerEl.textContent = fmtTime(sec); }
+    }
+
+    if (S.stage !== 'collect') { arrow.hidden = true; return; }
+
+    const margin = 40;
+    let nearest = null, nearestD = Infinity;
+    for (const j of S.junks) {
+      if (j.got) continue;
+      const dyaw = wrap180(S.baseYaw + j.off - S.viewYaw);
+      const dpitch = j.pitch - S.viewPitch;
+      const x = S.W / 2 + dyaw / hfov * S.W;
+      const y = S.H / 2 - dpitch / VFOV * S.H;
+      j.x = x; j.y = y;
+      // 화면 밖이면 아예 멀리 보냄 (±180 경계에서 튀는 것 방지)
+      const visible = Math.abs(dyaw) < hfov * .5 + 15 && Math.abs(dpitch) < VFOV * .5 + 15;
+      j.el.style.transform = visible ? `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0)` : 'translate3d(-9999px,-9999px,0)';
+      const onScreen = x > 20 && x < S.W - 20 && y > 110 && y < S.H - 80;   // HUD·안내문에 가린 건 화면 밖으로 침
+      if (onScreen) { nearest = null; nearestD = -1; }
+      if (!onScreen && nearestD >= 0) {
+        const d = Math.hypot(dyaw, dpitch);
+        if (d < nearestD) { nearestD = d; nearest = { dyaw, dpitch }; }
+      }
+    }
+
+    // 화면 안에 하나라도 보이면 화살표 숨김, 아니면 가장 가까운 쪽 가리킴
+    if (!nearest) { arrow.hidden = true; return; }
+    const vx = nearest.dyaw / hfov * S.W, vy = -nearest.dpitch / VFOV * S.H;
+    const ang = Math.atan2(vy, vx);
+    const top = 120, bottom = 90;  // HUD·안내문 영역 피하기
+    const cx = S.W / 2, cy = (top + (S.H - bottom)) / 2;
+    const hw = S.W / 2 - margin, hh = (S.H - bottom - top) / 2 - 10;
+    const k = Math.min(hw / Math.abs(Math.cos(ang) || 1e-6), hh / Math.abs(Math.sin(ang) || 1e-6));
+    const ax = cx + Math.cos(ang) * k, ay = cy + Math.sin(ang) * k;
+    arrow.hidden = false;
+    arrow.style.transform = `translate3d(${ax.toFixed(1)}px,${ay.toFixed(1)}px,0) rotate(${ang}rad)`;
+  }
+
+  // ===== 유틸 =====
+  function norm360(a){ return ((a % 360) + 360) % 360; }
+  function wrap180(a){ a = norm360(a); return a > 180 ? a - 360 : a; }
+  function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+  function rand(a, b){ return a + Math.random() * (b - a); }
+  function shuffle(a){ for (let i = a.length - 1; i > 0; i--) { const k = Math.floor(Math.random() * (i + 1)); [a[i], a[k]] = [a[k], a[i]]; } return a; }
+  function fmtTime(s){ return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+
+  // 핀치 줌 / 더블탭 확대 방지 (iOS)
+  document.addEventListener('gesturestart', e => e.preventDefault());
+  let lastTouch = 0;
+  document.addEventListener('touchend', e => { const n = Date.now(); if (n - lastTouch < 300) e.preventDefault(); lastTouch = n; }, { passive: false });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>방 QR 인쇄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&display=swap" rel="stylesheet">
+<!-- QR 생성: qrcodejs 1.0.0 (버전 고정) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  [hidden]{display:none!important}
+  :root{
+    --bg:#05060f; --ink:#eaf2ff; --dim:#8fa3c8; --hud:#7cf7ff; --yellow:#ffd43b;
+    --title:'Black Han Sans','Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;
+    --body:'Do Hyeon','Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:radial-gradient(ellipse at 50% 0%,#1a2150 0%,#0a0d22 50%,#04050c 100%) fixed,var(--bg);
+    color:var(--ink);font-family:var(--body)}
+  main{max-width:720px;margin:0 auto;
+    padding:calc(env(safe-area-inset-top,0px) + 24px) calc(env(safe-area-inset-right,0px) + 16px)
+            calc(env(safe-area-inset-bottom,0px) + 40px) calc(env(safe-area-inset-left,0px) + 16px)}
+  header{text-align:center;margin-bottom:22px}
+  .badge{display:inline-block;font-size:14px;letter-spacing:2px;color:var(--hud);border:2px solid rgba(124,247,255,.45);
+    border-radius:999px;padding:4px 12px;margin-bottom:12px}
+  h1{margin:0 0 8px;font-family:var(--title);font-weight:normal;font-size:40px;color:var(--yellow);
+    -webkit-text-stroke:1.5px #000;text-shadow:0 4px 0 #000}
+  header p{margin:0 0 18px;font-size:18px;color:var(--dim);line-height:1.4;word-break:keep-all}
+  .btn{appearance:none;-webkit-appearance:none;font-family:var(--title);font-size:22px;color:#111;background:var(--yellow);
+    border:4px solid #000;border-radius:16px;padding:12px 30px;box-shadow:0 7px 0 #000;cursor:pointer;
+    transition:transform .06s,box-shadow .06s;touch-action:manipulation}
+  .btn:active{transform:translateY(7px);box-shadow:0 0 0 #000}
+
+  .card{background:#fff;color:#111;border:4px solid #000;border-radius:22px;box-shadow:0 8px 0 #000;
+    padding:22px 16px 18px;margin:0 auto 34px;text-align:center;max-width:520px}
+  .card .tag{font-size:16px;letter-spacing:1px;color:#555}
+  .card h2{margin:4px 0 14px;font-family:var(--title);font-weight:normal;font-size:44px;line-height:1}
+  .qr{display:flex;justify-content:center}
+  /* 화면: 폰 폭에 맞게, 인쇄: 12cm */
+  .qr img,.qr canvas{width:min(9cm,78vw)!important;height:min(9cm,78vw)!important;image-rendering:pixelated}
+  .code{margin-top:10px;font-family:ui-monospace,Menlo,monospace;font-size:13px;color:#666;word-break:break-all}
+  .link{display:inline-block;margin-top:10px;font-size:18px;color:#0b63d1;word-break:break-all}
+
+  @media print{
+    @page{size:A4;margin:12mm}
+    html,body{background:#fff!important;color:#000}
+    header,.noprint{display:none!important}
+    main{padding:0;max-width:none}
+    .card{box-shadow:none;border:3px solid #000;margin:0 auto;max-width:none;width:100%;
+      break-after:page;page-break-after:always;padding:14mm 10mm}
+    .card:last-child{break-after:auto;page-break-after:auto}
+    .card .tag{font-size:14pt}
+    .card h2{font-size:54pt;margin:4mm 0 8mm}
+    .qr img,.qr canvas{width:12cm!important;height:12cm!important}
+    .code{font-size:10pt}
+    .link{color:#000;text-decoration:none;font-size:11pt}
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="badge">AR MISSION · 테스트용</div>
+    <h1>방 QR 인쇄</h1>
+    <p>인쇄해서 각 방 문이나 벽에 붙여 주세요.<br>한 장에 QR 하나씩, 12cm 크기로 인쇄돼요.</p>
+    <button class="btn" onclick="window.print()">인쇄하기</button>
+  </header>
+  <div id="cards"></div>
+  <p class="noprint" id="libErr" hidden style="text-align:center;color:#ff5c7a">QR 생성 라이브러리를 못 불러왔어요. 네트워크를 확인하고 새로고침해 주세요.</p>
+</main>
+<script>
+(() => {
+  const ROOMS = [
+    { id: 'living',  name: '거실' },
+    { id: 'room3',   name: '침실3' },
+    { id: 'balcony', name: '발코니' },
+  ];
+  const wrap = document.getElementById('cards');
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  ROOMS.forEach(r => {
+    const data = 'MALLANG-AU:room:' + r.id;
+    const url = new URL('ar-junk.html?room=' + encodeURIComponent(r.id), location.href).href;
+    const card = document.createElement('section');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="tag">우주 쓰레기 줍기 · 방 QR</div>
+      <h2>${esc(r.name)}</h2>
+      <div class="qr"></div>
+      <div class="code">${esc(data)}</div>
+      <a class="link" href="${esc(url)}">이 방으로 미션 열기 →<br>${esc(url)}</a>`;
+    wrap.appendChild(card);
+    if (typeof QRCode === 'function') {
+      new QRCode(card.querySelector('.qr'), {
+        text: data, width: 512, height: 512,
+        colorDark: '#000000', colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M,
+      });
+    }
+  });
+  if (typeof QRCode !== 'function') document.getElementById('libErr').hidden = false;
+})();
+</script>
+</body>
+</html>
