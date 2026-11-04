@@ -19,80 +19,75 @@
   *{box-sizing:border-box}
   html,body{margin:0;background:radial-gradient(ellipse at 50% 0%,#4a3222 0%,#22170f 50%,#0e0906 100%) fixed,var(--bg);
     color:var(--ink);font-family:var(--body)}
-  main{max-width:720px;margin:0 auto;
+  main{max-width:760px;margin:0 auto;
     padding:calc(env(safe-area-inset-top,0px) + 24px) calc(env(safe-area-inset-right,0px) + 16px)
             calc(env(safe-area-inset-bottom,0px) + 40px) calc(env(safe-area-inset-left,0px) + 16px)}
-  header{text-align:center;margin-bottom:22px}
-  .badge{display:inline-block;font-size:14px;letter-spacing:2px;color:var(--hud);border:2px solid rgba(255,207,107,.5);
-    border-radius:999px;padding:4px 12px;margin-bottom:12px}
-  h1{margin:0 0 8px;font-family:var(--title);font-weight:normal;font-size:40px;color:var(--yellow);
-    -webkit-text-stroke:1.5px #000;text-shadow:0 4px 0 #000}
-  header p{margin:0 0 18px;font-size:18px;color:var(--dim);line-height:1.4;word-break:keep-all}
-  .btn{appearance:none;-webkit-appearance:none;font-family:var(--title);font-size:22px;color:#111;background:var(--yellow);
-    border:4px solid #000;border-radius:16px;padding:12px 30px;box-shadow:0 7px 0 #000;cursor:pointer;
-    transition:transform .06s,box-shadow .06s;touch-action:manipulation}
+  header{text-align:center;margin-bottom:18px}
+  .badge{display:inline-block;font-size:14px;letter-spacing:2px;color:var(--hud);border:2px solid rgba(255,207,107,.5);border-radius:999px;padding:4px 12px;margin-bottom:12px}
+  h1{margin:0 0 8px;font-family:var(--title);font-weight:normal;font-size:40px;color:var(--yellow);-webkit-text-stroke:1.5px #000;text-shadow:0 4px 0 #000}
+  header p{margin:0 0 16px;font-size:18px;color:var(--dim);line-height:1.45;word-break:keep-all}
+  header p b{color:var(--ink);font-weight:normal}
+  .btn{appearance:none;-webkit-appearance:none;font-family:var(--title);font-size:22px;color:#111;background:var(--yellow);border:4px solid #000;border-radius:16px;
+    padding:12px 30px;box-shadow:0 7px 0 #000;cursor:pointer;transition:transform .06s,box-shadow .06s;touch-action:manipulation}
   .btn:active{transform:translateY(7px);box-shadow:0 0 0 #000}
+  .guide{text-align:left;font-size:16px;line-height:1.55;color:var(--dim);border:2px solid rgba(255,207,107,.5);border-radius:14px;padding:10px 14px;margin:0 auto 18px;word-break:keep-all}
+  .guide b{color:var(--ink);font-weight:normal}
 
-  .card{background:#fff;color:#111;border:4px solid #000;border-radius:22px;box-shadow:0 8px 0 #000;
-    padding:22px 16px 18px;margin:0 auto 34px;text-align:center;max-width:520px}
-  .card .tag{font-size:16px;letter-spacing:1px;color:#555}
-  .card h2{margin:4px 0 14px;font-family:var(--title);font-weight:normal;font-size:44px;line-height:1}
+  /* 한 장 시트: 2열, 점선 = 자르는 선 */
+  .sheet{background:#fff;color:#111;border-radius:12px;display:grid;grid-template-columns:1fr 1fr;overflow:hidden;box-shadow:0 8px 0 #000;border:3px solid #000}
+  .cell{border-right:2px dashed #999;border-bottom:2px dashed #999;padding:12px 8px 10px;text-align:center;position:relative}
+  .cell:nth-child(2n){border-right:0}
+  .cell.door{background:#fff7e3}
+  .cell .tag{font-size:12px;color:#777}
+  .cell h2{margin:2px 0 4px;font-family:var(--title);font-weight:normal;font-size:26px;line-height:1.1}
+  .cell .kind{display:inline-block;font-size:13px;border:2px solid #111;border-radius:999px;padding:1px 9px;margin-bottom:6px}
+  .cell.door .kind{background:#ffcf6b}
   .qr{display:flex;justify-content:center}
-  /* 화면: 폰 폭에 맞게, 인쇄: 12cm */
-  .qr img,.qr canvas{width:min(9cm,78vw)!important;height:min(9cm,78vw)!important;image-rendering:pixelated}
-  .code{margin-top:10px;font-family:ui-monospace,Menlo,monospace;font-size:13px;color:#666;word-break:break-all}
-  .link{display:inline-block;margin-top:10px;font-size:18px;color:#0b63d1;word-break:break-all}
-  .card.sub{background:#fff8d6}
-  .card.sub h2{font-size:36px}
-  .card .where{font-size:16px;color:#333;margin:-6px auto 10px;word-break:keep-all;max-width:90%}
-  .card .where span{display:inline-block;min-width:120px;border-bottom:2px dashed #b08a5a;padding:0 6px;outline:none;color:#000}
-  .card .where span:focus{background:#fff1c9}
-  .rooms{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0 0 16px}
-  .chip{border:3px solid #000;border-radius:999px;background:#5a3e2b;color:#fff;font-family:var(--body);font-size:18px;padding:6px 14px;box-shadow:0 4px 0 #000}
-  .chip.on{background:var(--hud);color:#000}
-  .guide{text-align:left;font-size:16px;line-height:1.5;color:var(--dim);border:2px solid rgba(255,207,107,.5);border-radius:14px;padding:10px 14px;margin:0 auto 18px;max-width:520px;word-break:keep-all}
+  .qr img,.qr canvas{width:min(36vw,7cm)!important;height:min(36vw,7cm)!important;image-rendering:pixelated}
+  .where{font-size:13px;color:#333;margin-top:6px;word-break:keep-all}
+  .where span{display:inline-block;min-width:90px;border-bottom:2px dashed #b08a5a;padding:0 4px;outline:none;color:#000}
+  .where span:focus{background:#fff1c9}
+  .code{font-family:ui-monospace,Menlo,monospace;font-size:10px;color:#888;margin-top:3px}
+  .cut{position:absolute;top:-11px;left:-9px;font-size:16px;color:#999}
+  .links{margin-top:18px;text-align:center;font-size:15px;color:var(--dim);line-height:1.8}
+  .links a{color:var(--hud)}
 
   @media print{
-    @page{size:A4;margin:12mm}
+    @page{size:A4;margin:8mm}
     html,body{background:#fff!important;color:#000}
-    header,.noprint{display:none!important}
+    header,.guide,.links,.noprint{display:none!important}
     main{padding:0;max-width:none}
-    .card{box-shadow:none;border:3px solid #000;margin:0 auto;max-width:none;width:100%;
-      break-after:page;page-break-after:always;padding:14mm 10mm;break-inside:avoid;page-break-inside:avoid}
-    .card.sub{background:#fff;padding:3mm 8mm;margin-bottom:4mm}
-    .card.sub.a{break-after:auto;page-break-after:auto}
-    .card.sub h2{font-size:34pt;margin:1mm 0 3mm}
-    .card.sub .qr img,.card.sub .qr canvas{width:8cm!important;height:8cm!important}
-    .card .where{font-size:11pt;margin:0 0 3mm}
-    .card.off{display:none!important}
-    .card.last{break-after:auto!important;page-break-after:auto!important}
-    .card .tag{font-size:14pt}
-    .card h2{font-size:54pt;margin:4mm 0 8mm}
-    .qr img,.qr canvas{width:12cm!important;height:12cm!important}
-    .code{font-size:10pt}
-    .link{color:#000;text-decoration:none;font-size:11pt}
+    .sheet{box-shadow:none;border:0;border-radius:0;border-top:1px dashed #999;border-left:1px dashed #999}
+    .cell{height:90mm;overflow:hidden;padding:3mm 3mm 1mm;border-right:1px dashed #999;border-bottom:1px dashed #999;break-inside:avoid;page-break-inside:avoid}
+    .cell:nth-child(2n){border-right:1px dashed #999}
+    .cell h2{font-size:18pt;margin:0 0 1mm}
+    .cell .tag{font-size:8pt}
+    .cell .kind{font-size:9pt;margin-bottom:1.5mm}
+    .where{margin-top:1mm;font-size:9pt}
+    .code{display:none}
+    .qr img,.qr canvas{width:6cm!important;height:6cm!important}
+    .where span{border-bottom-color:transparent}
   }
 </style>
 </head>
 <body>
 <main>
   <header>
-    <div class="badge">🏠 펜션 살리기 · 테스트용</div>
-    <h1>방 QR 인쇄</h1>
-    <p>방마다 4장: <b>메인 QR</b>(12cm)<br>+ <b>A·B 지점</b>(8cm, 1장에 2개) + <b>문</b>(8cm)</p>
-    <div class="rooms" id="chips"></div>
+    <div class="badge">🏠 펜션 살리기 · QR 인쇄</div>
+    <h1>방 QR 한 장 인쇄</h1>
+    <p>방마다 <b>메인 QR</b> + <b>문 QR</b> 2장씩, 3개 방 =<br><b>A4 한 장에 6개</b>. 인쇄해서 점선대로 잘라 쓰세요 ✂️</p>
     <button class="btn" onclick="window.print()">인쇄하기</button>
   </header>
-  <div class="guide noprint">
+  <div class="guide">
     📌 붙이는 법<br>
-    · 메인 QR: 방 가운데쯤 눈높이 벽 (폰으로 비춘 채 퍼즐을 풀 곳)<br>
-    · A·B 지점: 메인과 <b>멀리, 서로도 떨어진 곳</b> (방 반대편 벽, 창가 등)<br>
-    · 문: 그 방 <b>문 안쪽</b> 눈높이 (노크 암호·도둑 내쫓기에서 써요)<br>
-    · 너무 높거나 낮지 않게, 빛 반사 없는 곳<br>
-    ✏️ 각 QR의 <b>'붙일 곳'</b> 칸을 눌러 실제 장소(예: 냉장고 옆, 현관 신발장)를 적고 인쇄하세요
+    · <b>메인 QR</b>: 그 방 가운데쯤 눈높이 벽 (미션 시작)<br>
+    · <b>문 QR</b>: 그 방 <b>문 안쪽</b> 눈높이 (이동 미션 중간 지점, 노크·문 잠그기)<br>
+    · 빛 반사 없는 곳에, 구겨지지 않게 테이프로<br>
+    ✏️ 아래 <b>방 이름</b>과 <b>'붙일 곳'</b>을 눌러 실제 펜션에 맞게 고친 뒤 인쇄해도 돼요
   </div>
-  <div id="cards"></div>
-  <p class="noprint" id="libErr" hidden style="text-align:center;color:#ff5c7a">QR 생성 라이브러리를 못 불러왔어요. 네트워크를 확인하고 새로고침해 주세요.</p>
+  <div class="sheet" id="sheet"></div>
+  <p class="noprint" id="libErr" hidden style="text-align:center;color:#ff6b6b">QR 생성 라이브러리를 못 불러왔어요. 네트워크를 확인하고 새로고침해 주세요.</p>
+  <div class="links" id="links"></div>
 </main>
 <script>
 (() => {
@@ -101,46 +96,28 @@
     { id: 'room3',   name: '침실3' },
     { id: 'balcony', name: '발코니' },
   ];
-  const wrap = document.getElementById('cards');
-  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
   const SPOTS = [
-    { s: '',  label: '메인 QR', cls: 'main', where: '방 가운데 눈높이 벽' },
-    { s: 'A', label: 'A 지점',     cls: 'sub a', where: '메인에서 멀리 떨어진 곳' },
-    { s: 'B', label: 'B 지점',     cls: 'sub b', where: '메인·A와 떨어진 곳' },
-    { s: 'D', label: '문',         cls: 'sub d', where: '방 문 안쪽 (노크·문 잠그기용)' },
+    { s: '',  kind: '🏁 메인 QR', where: '방 가운데 눈높이 벽', cls: '' },
+    { s: 'D', kind: '🚪 문 QR',   where: '방 문 안쪽',          cls: 'door' },
   ];
-  const cards = [];
-  ROOMS.forEach(r => {
-    SPOTS.forEach(sp => {
-      const data = 'MALLANG-AU:room:' + r.id + (sp.s ? ':' + sp.s : '');
-      const url = new URL('mission.html?room=' + encodeURIComponent(r.id), location.href).href;
-      const card = document.createElement('section');
-      card.className = 'card ' + sp.cls; card.dataset.room = r.id;
-      card.innerHTML = `
-        <div class="tag">🏠 펜션 살리기 · ${esc(r.name)}</div>
-        <h2>${esc(sp.s ? r.name + ' ' + sp.label : r.name)}</h2>
-        <div class="where">붙일 곳: <span contenteditable="true" spellcheck="false">${esc(sp.where)}</span></div>
-        <div class="qr"></div>
-        <div class="code">${esc(data)}</div>
-        ${sp.s ? '' : `<a class="link" href="${esc(url)}">이 방 미션 목록 열기 →<br>${esc(url)}</a>`}`;
-      wrap.appendChild(card); cards.push(card);
-      if (typeof QRCode === 'function') {
-        new QRCode(card.querySelector('.qr'), { text: data, width: 512, height: 512, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
-      }
-    });
-  });
-  const markLast = () => { cards.forEach(c => c.classList.remove('last')); const vis = cards.filter(c => !c.hidden); if (vis.length) vis[vis.length-1].classList.add('last'); };
-  markLast();
+  const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const sheet = document.getElementById('sheet');
+  ROOMS.forEach(r => SPOTS.forEach(sp => {
+    const data = 'MALLANG-AU:room:' + r.id + (sp.s ? ':' + sp.s : '');
+    const cell = document.createElement('div');
+    cell.className = 'cell ' + sp.cls;
+    cell.innerHTML = `<span class="cut noprint">✂</span>
+      <div class="tag">🏠 펜션 살리기</div>
+      <h2 contenteditable="true" spellcheck="false">${esc(r.name)}</h2>
+      <div class="kind">${sp.kind}</div>
+      <div class="qr"></div>
+      <div class="where">붙일 곳: <span contenteditable="true" spellcheck="false">${esc(sp.where)}</span></div>
+      <div class="code">${esc(data)}</div>`;
+    sheet.appendChild(cell);
+    if (typeof QRCode === 'function') new QRCode(cell.querySelector('.qr'), { text: data, width: 512, height: 512, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+  }));
   if (typeof QRCode !== 'function') document.getElementById('libErr').hidden = false;
-  // 방 골라서 인쇄
-  const chips = document.getElementById('chips');
-  [['all','전체']].concat(ROOMS.map(r => [r.id, r.name])).forEach(([id, name], i) => {
-    const b = document.createElement('button'); b.className = 'chip' + (i ? '' : ' on'); b.textContent = name;
-    b.onclick = () => { chips.querySelectorAll('.chip').forEach(x => x.classList.remove('on')); b.classList.add('on');
-      cards.forEach(c => { const off = id !== 'all' && c.dataset.room !== id; c.classList.toggle('off', off); c.hidden = off; }); markLast(); };
-    chips.appendChild(b);
-  });
+  document.getElementById('links').innerHTML = '방별 미션 목록 바로가기<br>' + ROOMS.map(r => `<a href="${esc(new URL('mission.html?room=' + r.id, location.href).href)}">${esc(r.name)}</a>`).join(' · ');
 })();
 </script>
 </body>

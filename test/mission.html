@@ -343,10 +343,10 @@
     <div class="story">오늘 밤 펜션이 엉망이다! 🏚️<br>크루는 펜션을 고치고, 임포스터는 몰래 망가뜨린다.</div>
     <div class="rooms" id="roomChips"></div>
     <div class="howto">
-      방마다 QR 4장을 붙여요: <b>메인 QR</b>, 서로 떨어진 곳에 <b>A 지점</b>·<b>B 지점</b>, 방 문 안쪽에 <b>문 QR</b>.<br>
+      방마다 QR 2장을 붙여요: 방 가운데 <b>메인 QR</b>, 방 문 안쪽에 <b>문 QR</b>.<br>
       메인 QR을 찍으면 미션이 시작돼요.<br>
       📷 <b>현실 배경 미션</b>은 카메라 속 내 방에서 해요.<br>
-      📍 <b>이동 미션</b>은 중간에 A·B 지점 QR을 찍어야 해요.<br>
+      📍 <b>이동 미션</b>은 중간에 문 QR을 찍어야 해요.<br>
       ⏱️ 시간 안에 못 하면 실패, 메인 QR부터 다시!
     </div>
     <div id="menuList"></div>
@@ -402,7 +402,7 @@ const ROOM_NAMES = Object.fromEntries(ROOMS);
 const SPOT_NAMES = { '':'메인', A:'A 지점', B:'B 지점', D:'문' };
 const VFOV = 62;
 const LOST_MS = 2000;
-const CATS = { real:'📷 현실 배경 · 소리 미션', screen:'🧩 화면 미션', move:'📍 이동 미션 (A·B 지점 QR)', duo:'👥 2인 미션' };
+const CATS = { real:'📷 현실 배경 · 소리 미션', screen:'🧩 화면 미션', move:'📍 이동 미션 (문 QR 왕복)', duo:'👥 2인 미션' };
 
 const params = new URLSearchParams(location.search);
 let room = (params.get('room') || '').trim() || null;
@@ -885,12 +885,12 @@ M({ id:'card', cat:'screen', icon:'🔑', name:'카드키 긁기', needs:[], lim
   }
 });
 
-// ---------- 📱 발열 체크 (A 지점 QR 비추기) ----------
+// ---------- 📱 발열 체크 (문 QR) ----------
 M({ id:'scan', cat:'screen', icon:'🌡️', name:'발열 체크', needs:['motion'],
-  desc:'체온계(A 지점)로 가서, QR을 비추고 손가락을 댄 채 15초 동안 가만히 있으세요.',
-  rules:['📍 A 지점으로 이동', '❌ 움직이거나 손을 떼면 0초부터'],
+  desc:'문 앞 체온계(문 QR)로 가서, 손가락을 댄 채 15초 동안 가만히 있으세요.',
+  rules:['📍 문 QR로 이동', '❌ 움직이거나 손을 떼면 0초부터'],
   async start(c){
-    await c.checkpoint('A', '체온계로 이동');
+    await c.checkpoint('D', '체온계로 이동');
     if (c.finished) return;
     const DUR = 15;
     const x = c.center(`<div class="panel"><div class="scanbody"><div class="who">🧍</div><div class="bar"></div></div>
@@ -918,11 +918,11 @@ M({ id:'scan', cat:'screen', icon:'🌡️', name:'발열 체크', needs:['motio
 
 // ---------- 📍 샴페인 흔들기 (신호등, 메인→A) ----------
 M({ id:'shake', cat:'move', icon:'🍾', name:'샴페인 흔들기', needs:['motion'], limit:60,
-  desc:'건배 준비! 🟢 초록불에만 폰을 흔들어 샴페인 압력을 채우세요. 🔴 빨간불에 흔들면 김이 빠져요! 메인 → A 지점 두 번째 병.',
-  rules:['📍 메인 → A 지점', '⏱️ 60초 (이동 중엔 멈춤)'],
+  desc:'건배 준비! 🟢 초록불에만 폰을 흔들어 샴페인 압력을 채우세요. 🔴 빨간불에 흔들면 김이 빠져요! 메인 → 문 QR에서 두 번째 병.',
+  rules:['📍 메인 → 문 QR', '⏱️ 60초 (이동 중엔 멈춤)'],
   async start(c){
     for (let phase = 1; phase <= 2; phase++) {
-      if (phase === 2) { await c.checkpoint('A', '두 번째 샴페인으로 이동'); if (c.finished) return; }
+      if (phase === 2) { await c.checkpoint('D', '두 번째 샴페인으로 이동'); if (c.finished) return; }
       await shakePhase(c, phase);
       if (c.finished) return;
     }
@@ -962,8 +962,8 @@ function shakePhase(c, phase){
 
 // ---------- 📍 계란 굴리기 (기울기 미로, 구멍, →B) ----------
 M({ id:'maze', cat:'move', icon:'🍳', name:'계란 굴리기', needs:['motion'], limit:75,
-  desc:'아침 준비! 폰을 기울여 계란을 접시🍽️까지 굴리세요. 구멍에 빠지면 깨져서 처음부터! 도착하면 B 지점 식탁에 내려놓기.',
-  rules:['📍 끝나면 B 지점', '⏱️ 75초 (이동 중엔 멈춤)'],
+  desc:'아침 준비! 폰을 기울여 계란을 접시🍽️까지 굴리세요. 구멍에 빠지면 깨져서 처음부터! 도착하면 문 QR에 찍어 배달 완료.',
+  rules:['📍 끝나면 문 QR', '⏱️ 75초 (이동 중엔 멈춤)'],
   async start(c){
     const CW = 7, CH = 9, TW = CW*2+1, TH = CH*2+1;
     const grid = Array.from({ length: TH }, () => Array(TW).fill(1));
@@ -1034,22 +1034,22 @@ M({ id:'maze', cat:'move', icon:'🍳', name:'계란 굴리기', needs:['motion'
     });
     if (c.finished) return;
     x.remove();
-    await c.checkpoint('B', '식탁에 내려놓기');
+    await c.checkpoint('D', '계란 배달');
     c.done();
   }
 });
 
 // ---------- 📍 숯불 살리기 (마이크 적정 세기, 메인→A) ----------
 M({ id:'blow', cat:'move', icon:'🔥', name:'숯불 살리기', needs:['mic'], limit:60,
-  desc:'바비큐 숯불이 꺼져 가요! 마이크에 바람을 불어 세기를 초록 칸 안에 맞추세요. 칸 안일 때만 불이 살아나요. 너무 세면 재가 날려요! 그릴 2개: 메인 → A 지점.',
-  rules:['📍 메인 → A 지점', '⏱️ 60초 (이동 중엔 멈춤)'],
+  desc:'바비큐 숯불이 꺼져 가요! 마이크에 바람을 불어 세기를 초록 칸 안에 맞추세요. 칸 안일 때만 불이 살아나요. 너무 세면 재가 날려요! 그릴 2개: 메인 → 문 QR.',
+  rules:['📍 메인 → 문 QR', '⏱️ 60초 (이동 중엔 멈춤)'],
   async start(c){
     let an = null, buf = null;
     if (Core.micStream && actx) {
       try { const src = actx.createMediaStreamSource(Core.micStream); an = actx.createAnalyser(); an.fftSize = 1024; src.connect(an); buf = new Float32Array(an.fftSize); c.addCleanup(() => { try { src.disconnect(); } catch(e){} }); } catch(e) { an = null; }
     }
     for (let tank = 1; tank <= 2; tank++) {
-      if (tank === 2) { await c.checkpoint('A', '두 번째 그릴로 이동'); if (c.finished) return; }
+      if (tank === 2) { await c.checkpoint('D', '두 번째 그릴로 이동'); if (c.finished) return; }
       await new Promise(resolve => {
         const x = c.center(`<div class="panel"><div class="lcd">그릴 ${tank} / 2 · 초록 칸 안으로 후~</div>
           <div class="o2"><div class="vbar"><div class="band"></div><div class="lv"></div></div><div class="tank"><i></i><b>🔥0%</b></div></div><div class="alt"></div></div>`);
@@ -1083,8 +1083,8 @@ M({ id:'blow', cat:'move', icon:'🔥', name:'숯불 살리기', needs:['mic'], 
 
 // ---------- 📍 와이파이 잡기 (AR, →B) ----------
 M({ id:'antenna', cat:'real', icon:'📶', name:'와이파이 잡기', needs:['cam','motion'], ar:true, limit:60,
-  desc:'펜션 와이파이가 안 터져요! 방 안 어딘가 떠다니는 신호 3개를 찾아 조준점 안에 2초씩 붙잡으세요. 다 잡으면 B 지점 공유기 재부팅!',
-  rules:['📍 끝나면 B 지점', '⏱️ 60초 (이동 중엔 멈춤)'],
+  desc:'펜션 와이파이가 안 터져요! 방 안 어딘가 떠다니는 신호 3개를 찾아 조준점 안에 2초씩 붙잡으세요. 다 잡으면 문 QR 옆 공유기 재부팅!',
+  rules:['📍 끝나면 문 QR', '⏱️ 60초 (이동 중엔 멈춤)'],
   async start(c){
     const v = arView(c), N = 3, HOLD = 2;
     const cross = h(`<div class="cross"><i></i><svg viewBox="0 0 112 112"><circle cx="56" cy="56" r="52" fill="none" stroke="#5cffb0" stroke-width="6" stroke-dasharray="327" stroke-dashoffset="327"/></svg></div>`); c.el.appendChild(cross);
@@ -1117,15 +1117,15 @@ M({ id:'antenna', cat:'real', icon:'📶', name:'와이파이 잡기', needs:['c
     });
     if (c.finished) return;
     cross.remove();
-    await c.checkpoint('B', '공유기 재부팅');
+    await c.checkpoint('D', '공유기 재부팅');
     c.done();
   }
 });
 
 // ---------- 📍 분리수거 (AR, 만지면 안 되는 것, →A 쓰레기통) ----------
 M({ id:'junk', cat:'real', icon:'🗑️', name:'분리수거', needs:['cam','motion'], ar:true, limit:60,
-  desc:'어젯밤 파티 흔적! 둘러보며 노란 쓰레기 8개를 주우세요. 🔴 빨간 건 만지면 안 돼요(벌레·남의 양말)! 하나를 떨어뜨려요. 다 주우면 A 지점 쓰레기통에 버리기.',
-  rules:['📍 끝나면 A 지점(쓰레기통)', '⏱️ 60초 (이동 중엔 멈춤)'],
+  desc:'어젯밤 파티 흔적! 둘러보며 노란 쓰레기 8개를 주우세요. 🔴 빨간 건 만지면 안 돼요(벌레·남의 양말)! 하나를 떨어뜨려요. 다 주우면 문 QR(쓰레기통)에 버리기.',
+  rules:['📍 끝나면 문 QR(쓰레기통)', '⏱️ 60초 (이동 중엔 멈춤)'],
   async start(c){
     const v = arView(c), N = 8;
     const EM = ['🥤','🥫','🍺','📦','🍕','🧃','🍜','🥡'], HZ = ['🪳','🧦','🐛'];
@@ -1169,15 +1169,15 @@ M({ id:'junk', cat:'real', icon:'🗑️', name:'분리수거', needs:['cam','mo
     });
     if (c.finished) return;
     items.forEach(j => j.el.remove());
-    await c.checkpoint('A', '쓰레기통에 버리기', `<b style="color:var(--yellow)">${esc(spotLabel('A'))}</b>(쓰레기통) QR을 찍으세요`);
+    await c.checkpoint('D', '쓰레기통에 버리기', `<b style="color:var(--yellow)">${esc(spotLabel('D'))}</b>(쓰레기통) QR을 찍으세요`);
     c.done();
   }
 });
 
 // ---------- 📍 모기 잡기 (AR, 2회차, B 파리채 충전) ----------
 M({ id:'asteroids', cat:'real', icon:'🦟', name:'모기 잡기', needs:['cam','motion'], ar:true,
-  desc:'잠 못 자게 하는 모기떼! 조준점에 모기를 맞추고 화면을 탭해서 잡으세요. 1차 10마리(25초) → B 지점에서 전기 파리채 충전 → 2차 10마리(25초).',
-  rules:['📍 메인 → B 지점(파리채 충전)', '⏱️ 회차마다 25초'],
+  desc:'잠 못 자게 하는 모기떼! 조준점에 모기를 맞추고 화면을 탭해서 잡으세요. 1차 10마리(25초) → 문 QR에서 전기 파리채 충전 → 2차 10마리(25초).',
+  rules:['📍 메인 → 문 QR(파리채 충전)', '⏱️ 회차마다 25초'],
   async start(c){
     const v = arView(c), PER = 10, ALIVE = 3;
     const cross = h(`<div class="cross"><i></i></div>`); c.el.appendChild(cross);
@@ -1220,7 +1220,7 @@ M({ id:'asteroids', cat:'real', icon:'🦟', name:'모기 잡기', needs:['cam',
     for (wave = 1; wave <= 2; wave++) {
       if (wave === 2) {
         rocks.forEach(r => r.el.remove()); rocks = []; arrowEl.hidden = true;
-        await c.checkpoint('B', '전기 파리채 충전'); if (c.finished) return;
+        await c.checkpoint('D', '전기 파리채 충전'); if (c.finished) return;
       }
       tipNow(); c.setLimit(25); armed = true;
       for (let i = 0; i < ALIVE; i++) spawn();
@@ -1334,10 +1334,10 @@ M({ id:'balloon', cat:'real', icon:'🎈', name:'풍선 터뜨리기', needs:['c
 
 // ---------- 🔊 도둑 내쫓기 (AR + 소리 크기, →문) ----------
 M({ id:'thief', cat:'real', icon:'🦹', name:'도둑 내쫓기', needs:['cam','motion','mic'], ar:true, limit:60,
-  desc:'방에 도둑이 3명 숨어 들었어요! 폰을 들고 둘러보며 도둑을 동그라미 안에 잡고, 크게 소리 질러 겁을 줘서 쫓아내세요. 다 쫓아내면 문 QR에서 문 잠그기!',
+  desc:'방에 도둑이 숨어 들었어요! 폰을 들고 둘러보며 도둑을 찾아 동그라미 안에 잡고, 크게 소리 질러 겁을 줘서 쫓아내세요. 쫓아내면 문 QR에서 문 잠그기!',
   rules:['📢 도둑을 동그라미 안에 두고 소리 지르기', '📍 끝나면 문 QR', '⏱️ 60초 (이동 중엔 멈춤)'],
   async start(c){
-    const v = arView(c), N = 3;
+    const v = arView(c), N = 1;
     const mic = micAnalyser(c);
     const ring = h(`<div class="shout"></div>`); c.el.appendChild(ring);
     const meter = h(`<div class="db"><div class="box"><div class="row2"><span>📢 소리 크기</span><b class="v">-- dB</b><span class="need">조용히 1초…</span></div><div class="bar"><i></i><u></u></div><div class="alt"></div></div></div>`);
@@ -1349,7 +1349,7 @@ M({ id:'thief', cat:'real', icon:'🦹', name:'도둑 내쫓기', needs:['cam','
     for (let i = 0; i < N; i++) {
       const el = h(`<div class="thief"><div class="in"><div class="fear"><i></i></div><div class="who">🥷</div><div class="bag">💰</div></div></div>`);
       c.el.appendChild(el);
-      thieves.push({ el, fearEl: el.querySelector('.fear i'), off: i * 120 + rand(-25, 25), pitch: rand(-14, 4), fear: 0, gone: false, drift: rand(2, 5) * (Math.random() < .5 ? -1 : 1), ph: Math.random() * 6, x: 0, y: 0 });
+      thieves.push({ el, fearEl: el.querySelector('.fear i'), off: rand(90, 270), pitch: rand(-14, 4), fear: 0, gone: false, drift: rand(2, 5) * (Math.random() < .5 ? -1 : 1), ph: Math.random() * 6, x: 0, y: 0 });
     }
     let left = N, amb = 0, ambN = 0, calib = 0.9, thr = 0.08, level = 0, lastHey = 0;
     c.progress(0, N, '도둑');
@@ -1504,8 +1504,8 @@ M({ id:'knock', cat:'real', icon:'🚪', name:'노크 암호', needs:['mic','mot
 
 // ---------- 👥 배달 주문 (메뉴판=메인, 주문=A) ----------
 M({ id:'code', cat:'duo', icon:'🛵', name:'배달 주문', needs:[],
-  desc:'2인 미션! 메뉴판 담당은 메인 QR에서 메뉴 6개를 보고 말로만 불러 주고, 주문 담당은 A 지점에서 듣고 주문 앱에 입력해요. 떨어져서 큰 소리로!',
-  rules:['📱 메뉴판 담당 = 메인 QR', '📱 주문 담당 = A 지점 QR', '❌ 3번 틀리면 실패'],
+  desc:'2인 미션! 메뉴판 담당은 메인 QR에서 메뉴 6개를 보고 말로만 불러 주고, 주문 담당은 문 QR에서 듣고 주문 앱에 입력해요. 떨어져서 큰 소리로!',
+  rules:['📱 메뉴판 담당 = 메인 QR', '📱 주문 담당 = 문 QR', '❌ 3번 틀리면 실패'],
   start(c){
     const SY = ['🍕','🍔','🌭','🌮','🍗','🍖','🍜','🍝','🍣','🍤','🍙','🥟'];
     const roomHash = [...(room || 'x')].reduce((a, ch) => a * 31 + ch.charCodeAt(0) | 0, 7);
@@ -1527,9 +1527,9 @@ M({ id:'code', cat:'duo', icon:'🛵', name:'배달 주문', needs:[],
       box.innerHTML = `<div class="lcd">역할을 고르세요</div>
         <button class="btn full" id="rS">📋 메뉴판 담당<br><small style="font-family:var(--body);font-size:15px">메인 QR · 메뉴를 보고 말로 불러 주기</small></button>
         <div style="height:16px"></div>
-        <button class="btn full" id="rR" style="background:#7be08f">📲 주문 담당<br><small style="font-family:var(--body);font-size:15px">A 지점 · 듣고 주문 앱에 입력</small></button>`;
+        <button class="btn full" id="rR" style="background:#7be08f">📲 주문 담당<br><small style="font-family:var(--body);font-size:15px">문 QR · 듣고 주문 앱에 입력</small></button>`;
       box.querySelector('#rS').onclick = () => { sfx.click(); sender(); };
-      box.querySelector('#rR').onclick = async () => { sfx.click(); box.innerHTML = ''; await c.checkpoint('A', '주문 담당 자리로 이동'); if (!c.finished) receiver(); };
+      box.querySelector('#rR').onclick = async () => { sfx.click(); box.innerHTML = ''; await c.checkpoint('D', '주문 담당 자리로 이동'); if (!c.finished) receiver(); };
       c.tip('두 사람이 서로 다른 역할을 고르세요');
     }
     function sender(){
