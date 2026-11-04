@@ -98,6 +98,41 @@
   #arrow svg{width:100%;height:100%;filter:drop-shadow(0 0 8px rgba(255,212,59,.8));animation:nudge .9s ease-in-out infinite}
   @keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
 
+
+  /* 도둑 */
+  .thief{position:absolute;left:0;top:0;width:120px;height:150px;margin:-75px 0 0 -60px;will-change:transform;pointer-events:none}
+  .thief .in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;animation:sneak 1.4s ease-in-out infinite}
+  .thief .who{font-size:82px;line-height:1;filter:drop-shadow(0 0 10px rgba(0,0,0,.8)) drop-shadow(0 0 14px rgba(255,80,80,.55))}
+  .thief .bag{position:absolute;right:6px;bottom:12px;font-size:34px}
+  .thief .fear{width:84px;height:10px;border:2px solid #000;border-radius:6px;background:rgba(0,0,0,.6);overflow:hidden;margin-bottom:6px}
+  .thief .fear i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd43b,#ff6b6b)}
+  .thief.scared .in{animation:tremble .09s linear infinite}
+  .thief.gone .in{animation:flee .7s ease-in forwards}
+  @keyframes sneak{0%,100%{transform:translateX(-4px) rotate(-3deg)}50%{transform:translateX(4px) rotate(3deg)}}
+  @keyframes tremble{0%{transform:translate(-3px,0)}50%{transform:translate(3px,-2px)}100%{transform:translate(-3px,0)}}
+  @keyframes flee{0%{transform:scale(1);opacity:1}30%{transform:translateY(-30px) scale(1.15)}100%{transform:translate(160px,-40px) scale(.2);opacity:0}}
+  .shout{position:absolute;left:50%;top:50%;width:240px;height:240px;margin:-120px 0 0 -120px;border:3px dashed rgba(255,207,107,.7);border-radius:50%;pointer-events:none;transition:transform .08s}
+  .shout.loud{border-color:#ff6b6b;border-style:solid;box-shadow:0 0 30px rgba(255,107,107,.6)}
+  .db{position:absolute;left:0;right:0;bottom:calc(var(--sab) + 74px);display:flex;justify-content:center;pointer-events:none}
+  .db .box{pointer-events:auto;background:var(--panel);border:3px solid #000;border-radius:14px;padding:6px 12px;width:min(88vw,340px);box-shadow:0 0 0 2px var(--line)}
+  .db .row2{display:flex;justify-content:space-between;font-size:15px;color:var(--dim);margin-bottom:4px}
+  .db .row2 b{font-family:var(--title);font-weight:normal;color:var(--ink);font-size:18px}
+  .db .bar{position:relative;height:16px;border-radius:8px;background:rgba(255,255,255,.12);overflow:hidden}
+  .db .bar i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#7be08f,#ffd43b,#ff6b6b)}
+  .db .bar u{position:absolute;top:-2px;bottom:-2px;width:3px;background:#fff;box-shadow:0 0 6px #fff}
+
+  /* 노크 */
+  .rhythm{position:relative;height:70px;margin:6px 4px 10px;border-radius:12px;background:#2a1d14;border:3px solid #000}
+  .rhythm .kn{position:absolute;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;border:3px solid #000;background:#5a3e2b;
+    display:grid;place-items:center;font-size:20px;transition:transform .08s,background .08s}
+  .rhythm .kn.lit{background:var(--yellow);transform:scale(1.25);box-shadow:0 0 16px var(--yellow)}
+  .rhythm .kn.hit{background:var(--green)}
+  .rhythm .kn.miss{background:var(--red)}
+  .rhythm .mark{position:absolute;bottom:4px;width:4px;height:14px;margin-left:-2px;border-radius:2px;background:#fff;opacity:.85}
+  .door{font-size:88px;text-align:center;line-height:1.1;transition:transform .06s}
+  .door.knock{transform:scale(.94) rotate(-2deg)}
+  .knockinfo{display:flex;justify-content:space-between;font-size:15px;color:var(--dim);margin-top:8px}
+
   /* 배선 */
   .wires{position:relative;height:360px}
   .wires svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
@@ -288,7 +323,7 @@
     <div class="story">오늘 밤 펜션이 엉망이다! 🏚️<br>크루는 펜션을 고치고, 임포스터는 몰래 망가뜨린다.</div>
     <div class="rooms" id="roomChips"></div>
     <div class="howto">
-      방마다 QR 3장을 붙여요: <b>메인 QR</b>, 서로 떨어진 곳에 <b>A 지점</b>·<b>B 지점</b>.<br>
+      방마다 QR 4장을 붙여요: <b>메인 QR</b>, 서로 떨어진 곳에 <b>A 지점</b>·<b>B 지점</b>, 방 문 안쪽에 <b>문 QR</b>.<br>
       📱 <b>비추기 미션</b>은 QR을 카메라로 계속 비추고 있어야 작동해요.<br>
       📍 <b>이동 미션</b>은 중간에 A·B 지점 QR을 찍어야 해요.<br>
       ⏱️ 시간 안에 못 하면 실패, 메인 QR부터 다시!
@@ -343,10 +378,10 @@
 const QR_PREFIX = 'MALLANG-AU:room:';
 const ROOMS = [['living','거실'],['room3','침실3'],['balcony','발코니']];
 const ROOM_NAMES = Object.fromEntries(ROOMS);
-const SPOT_NAMES = { '':'메인', A:'A 지점', B:'B 지점' };
+const SPOT_NAMES = { '':'메인', A:'A 지점', B:'B 지점', D:'문' };
 const VFOV = 62;
 const LOST_MS = 2000;
-const CATS = { term:'📱 비추기 미션 (QR을 비춘 채로)', move:'📍 이동 미션 (A·B 지점 QR)', duo:'👥 2인 미션' };
+const CATS = { real:'🔊 현실 + 소리 미션', term:'📱 비추기 미션 (QR을 비춘 채로)', move:'📍 이동 미션 (A·B 지점 QR)', duo:'👥 2인 미션' };
 
 const params = new URLSearchParams(location.search);
 let room = (params.get('room') || '').trim() || null;
@@ -629,6 +664,29 @@ function pointArrow(target){
   arrowEl.style.transform = `translate3d(${(cx + Math.cos(ang)*k).toFixed(1)}px,${(cy + Math.sin(ang)*k).toFixed(1)}px,0) rotate(${ang}rad)`;
 }
 function popText(parent, x, y, text, bad){ const p = h(`<div class="pop ${bad ? 'bad' : ''}">${esc(text)}</div>`); p.style.left = x + 'px'; p.style.top = y + 'px'; parent.appendChild(p); setTimeout(() => p.remove(), 800); }
+
+// 마이크 분석기 (소리 크기 / 순간 최고치)
+function micAnalyser(c, fft = 1024){
+  if (!Core.micStream || !actx) return null;
+  try {
+    const src = actx.createMediaStreamSource(Core.micStream), an = actx.createAnalyser();
+    an.fftSize = fft; src.connect(an); c.addCleanup(() => { try { src.disconnect(); } catch(e){} });
+    const buf = new Float32Array(an.fftSize);
+    return { read(){ an.getFloatTimeDomainData(buf); let sq = 0, pk = 0; for (let i = 0; i < buf.length; i++) { const v = buf[i]; sq += v*v; const a = v < 0 ? -v : v; if (a > pk) pk = a; } return { rms: Math.sqrt(sq / buf.length), peak: pk }; } };
+  } catch(e) { return null; }
+}
+const toDb = r => Math.round(clamp(20 * Math.log10(Math.max(r, 1e-5)) + 94, 20, 120));
+// 노크 소리(짧은 잡음)
+function knockSound(at = 0){
+  if (!actx) return;
+  const t = actx.currentTime + at, len = 0.09, b = actx.createBuffer(1, Math.floor(actx.sampleRate * len), actx.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 4);
+  const s = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain();
+  s.buffer = b; f.type = 'lowpass'; f.frequency.value = 900; g.gain.value = 0.9;
+  s.connect(f); f.connect(g); g.connect(actx.destination); s.start(t);
+  tone(140, at, .08, 'sine', .25, 70);
+}
+
 function holdButton(label){
   const b = h(`<button class="btn full" style="margin-top:12px">${esc(label)}</button>`); b.holding = false;
   const on = e => { e.preventDefault(); b.holding = true; b.style.transform = 'translateY(7px)'; b.style.boxShadow = '0 0 0 #000'; };
@@ -1155,6 +1213,177 @@ M({ id:'asteroids', cat:'move', icon:'🦟', name:'모기 잡기', needs:['cam',
       c.setLimit(0); sfx.ok(6);
     }
     c.done();
+  }
+});
+
+
+// ---------- 🔊 도둑 내쫓기 (AR + 소리 크기, →문) ----------
+M({ id:'thief', cat:'real', icon:'🦹', name:'도둑 내쫓기', needs:['cam','motion','mic'], ar:true, limit:60,
+  desc:'방에 도둑이 3명 숨어 들었어요! 폰을 들고 둘러보며 도둑을 동그라미 안에 잡고, 크게 소리 질러 겁을 줘서 쫓아내세요. 다 쫓아내면 문 QR에서 문 잠그기!',
+  rules:['📢 도둑을 동그라미 안에 두고 소리 지르기', '📍 끝나면 문 QR', '⏱️ 60초 (이동 중엔 멈춤)'],
+  async start(c){
+    const v = arView(c), N = 3;
+    const mic = micAnalyser(c);
+    const ring = h(`<div class="shout"></div>`); c.el.appendChild(ring);
+    const meter = h(`<div class="db"><div class="box"><div class="row2"><span>📢 소리 크기</span><b class="v">-- dB</b><span class="need">조용히 1초…</span></div><div class="bar"><i></i><u></u></div><div class="alt"></div></div></div>`);
+    c.el.appendChild(meter);
+    const mBar = meter.querySelector('.bar i'), mMark = meter.querySelector('.bar u'), mVal = meter.querySelector('.v'), mNeed = meter.querySelector('.need');
+    let hb = null;
+    if (!mic) { hb = holdButton('마이크 대신: 꾹 누르면 소리침'); hb.style.fontSize = '17px'; hb.style.padding = '8px'; meter.querySelector('.alt').appendChild(hb); }
+    const thieves = [];
+    for (let i = 0; i < N; i++) {
+      const el = h(`<div class="thief"><div class="in"><div class="fear"><i></i></div><div class="who">🥷</div><div class="bag">💰</div></div></div>`);
+      c.el.appendChild(el);
+      thieves.push({ el, fearEl: el.querySelector('.fear i'), off: i * 120 + rand(-25, 25), pitch: rand(-14, 4), fear: 0, gone: false, drift: rand(2, 5) * (Math.random() < .5 ? -1 : 1), ph: Math.random() * 6, x: 0, y: 0 });
+    }
+    let left = N, amb = 0, ambN = 0, calib = 0.9, thr = 0.08, level = 0, lastHey = 0;
+    c.progress(0, N, '도둑');
+    const tipNow = () => c.tip(v.drag ? v.dragTip + ', 도둑에게 소리 질러요!' : '화살표 쪽에 도둑! 동그라미 안에 잡고 소리 질러요', v.drag);
+    c.onSwitch = tipNow; tipNow();
+    await new Promise(resolve => {
+      c.onFrame((t, dt) => {
+        v.update();
+        // 소리 크기
+        let rms = 0;
+        if (mic) rms = mic.read().rms; else rms = hb.holding ? 0.3 : 0.01;
+        level = Math.max(rms, level * Math.pow(0.02, dt));
+        if (calib > 0) { calib -= dt; amb += rms; ambN++; if (calib <= 0) { thr = clamp((amb / ambN) * 5, 0.08, 0.22); mNeed.textContent = `목표 ${toDb(thr)} dB 이상`; } }
+        const loud = calib <= 0 && rms > thr;
+        mVal.textContent = mic ? `${toDb(level)} dB` : (hb.holding ? '와아아!' : '...');
+        mBar.style.width = clamp((toDb(level) - 30) / 70 * 100, 0, 100) + '%';
+        mMark.style.left = clamp((toDb(thr) - 30) / 70 * 100, 0, 100) + '%';
+        ring.classList.toggle('loud', loud);
+        ring.style.transform = `scale(${1 + clamp(rms / thr - 1, 0, 1) * 0.12})`;
+        let nearest = null, nd = Infinity, any = false;
+        for (const th of thieves) {
+          if (th.gone) continue;
+          th.off += th.drift * dt * Math.sin(t / 2000 + th.ph);
+          const p = v.project(v.base + th.off, th.pitch); th.x = p.x; th.y = p.y;
+          th.el.style.transform = p.vis ? `translate3d(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px,0)` : 'translate3d(-9999px,0,0)';
+          const inRing = Math.hypot(p.x - Core.W/2, p.y - Core.H/2) < 130;
+          if (inRing && loud) { th.fear += dt * clamp(rms / thr, 1, 3) * 0.45; if (t - lastHey > 400) { lastHey = t; tone(300 + th.fear * 500, 0, .08, 'square', .05); } }
+          else th.fear = Math.max(0, th.fear - dt * 0.08);
+          th.el.classList.toggle('scared', inRing && loud);
+          th.fearEl.style.width = clamp(th.fear * 100, 0, 100) + '%';
+          if (th.fear >= 1) {
+            th.gone = true; left--; th.el.classList.remove('scared'); th.el.classList.add('gone');
+            sfx.ok(N - left); popText(c.el, p.x, p.y - 90, '도망간다~!'); const e = th.el; setTimeout(() => e.remove(), 800);
+            c.progress(N - left, N, '도둑');
+            if (left === 0) { setTimeout(resolve, 700); }
+            continue;
+          }
+          if (p.onScreen) any = true; else { const d = Math.hypot(p.dyaw, p.dpitch); if (d < nd) { nd = d; nearest = p; } }
+        }
+        pointArrow(any || left === 0 ? null : nearest);
+      });
+    });
+    if (c.finished) return;
+    ring.remove(); meter.remove();
+    await c.checkpoint('D', '문 잠그기', `도둑이 다시 못 들어오게 <b style="color:var(--yellow)">${esc(spotLabel('D'))}</b> QR을 찍으세요`);
+    c.done();
+  }
+});
+
+// ---------- 🔊 노크 암호 (문 QR, 박자 감지) ----------
+M({ id:'knock', cat:'real', icon:'🚪', name:'노크 암호', needs:['mic','motion'],
+  desc:'문 앞에 수상한 사람이! 문(문 QR)으로 가서, 문을 닫고 폰을 문에 댄 채 들려주는 박자대로 노크하세요. 3라운드!',
+  rules:['📍 문 QR로 이동', '🚪 문을 닫고 폰을 문에 대고 노크', '❌ 3번 틀리면 실패'],
+  async start(c){
+    await c.checkpoint('D', '문으로 이동', `<b style="color:var(--yellow)">${esc(spotLabel('D'))}</b> QR을 찍으세요`);
+    if (c.finished) return;
+    const PATTERNS = [
+      [1, 1, 0.5, 0.5],          // 똑 똑 똑똑똑   (간격 = 다음 노크까지 박자)
+      [0.5, 0.5, 1, 1],          // 똑똑똑 똑 똑
+      [1, 0.5, 0.5, 1],          // 똑 똑똑똑 똑
+      [0.5, 1, 0.5, 1],          // 똑똑 똑똑 똑
+      [1.5, 0.5, 1, 0.5, 0.5],   // 똑 - 똑똑 똑똑똑
+      [0.5, 0.5, 0.5, 1.5, 1],   // 똑똑똑똑 - 똑 똑
+    ];
+    const rounds = [shuffle(PATTERNS.slice(0, 4))[0], shuffle(PATTERNS.slice(0, 4))[0], shuffle(PATTERNS.slice(4))[0]];
+    const ROUNDS = rounds.length, MAXERR = 3, BEAT = 0.42;
+    const mic = micAnalyser(c, 512);
+    const x = c.center(`<div class="panel"><div class="dots">${'<i></i>'.repeat(ROUNDS)}</div><div class="lcd">잘 들어 보세요…</div>
+      <div class="door">🚪</div><div class="rhythm"></div>
+      <div class="knockinfo"><span class="cnt">노크 0</span><span class="vib"></span><span class="lives">❤️❤️❤️</span></div>
+      <div class="row"><button class="btn ghost replay">🔊 다시 듣기</button></div><div class="alt"></div></div>`);
+    const lcd = x.querySelector('.lcd'), door = x.querySelector('.door'), rhythm = x.querySelector('.rhythm'), cnt = x.querySelector('.cnt'), vib = x.querySelector('.vib'),
+          lives = x.querySelector('.lives'), dots = x.querySelectorAll('.dots i'), alt = x.querySelector('.alt');
+    let round = 0, errs = 0, mode = 'demo', knocks = [], lastOnset = 0, armed = true, amb = 0.02, ambN = 0, muteUntil = 0, vibHits = 0, lastVib = -1e9;
+    let tapBtn = null;
+    if (!mic) { tapBtn = h(`<button class="btn full" style="margin-top:12px">마이크 대신: 눌러서 노크</button>`); alt.appendChild(tapBtn); tapBtn.addEventListener('pointerdown', () => onKnock(performance.now())); c.tip(`마이크를 못 써요 (${Core.micResult}). 버튼으로 노크하세요`, true); }
+    c.onMotion(d => { if (d > 1.6) lastVib = performance.now(); });
+    function layout(pat){
+      const total = pat.reduce((a, b) => a + b, 0); rhythm.innerHTML = '';
+      let acc = 0; const pos = [0];
+      pat.forEach(b => { acc += b; pos.push(acc / total); });
+      pos.forEach(f => rhythm.appendChild(h(`<div class="kn" style="left:${8 + f * 84}%">✊</div>`)));
+      return pos;
+    }
+    function demo(){
+      mode = 'demo'; knocks = []; cnt.textContent = '노크 0'; vibHits = 0; vib.textContent = '';
+      const pat = rounds[round]; layout(pat);
+      lcd.textContent = `라운드 ${round + 1} · 잘 들어 보세요…`; lcd.className = 'lcd';
+      const kn = rhythm.querySelectorAll('.kn');
+      let tsum = 0; const times = [0]; pat.forEach(b => { tsum += b * BEAT; times.push(tsum); });
+      times.forEach((tt, i) => { knockSound(0.3 + tt); c.later(() => { kn[i].classList.add('lit'); door.classList.add('knock'); setTimeout(() => { kn[i].classList.remove('lit'); door.classList.remove('knock'); }, 140); }, 300 + tt * 1000); });
+      muteUntil = performance.now() + 300 + tsum * 1000 + 600;
+      c.later(() => { mode = 'listen'; lcd.textContent = '이제 문을 노크하세요! ✊'; }, 300 + tsum * 1000 + 600);
+    }
+    x.querySelector('.replay').onclick = () => { if (mode === 'listen' && knocks.length === 0) demo(); };
+    function onKnock(now){
+      if (mode !== 'listen') return;
+      knocks.push(now); cnt.textContent = `노크 ${knocks.length}`;
+      if (Math.abs(now - lastVib) < 160) vibHits++;
+      vib.textContent = Core.motCount ? `📳 진동 ${vibHits}/${knocks.length}` : '';
+      door.classList.add('knock'); setTimeout(() => door.classList.remove('knock'), 100);
+      const kn = rhythm.querySelectorAll('.kn'); if (kn[knocks.length - 1]) kn[knocks.length - 1].classList.add('lit');
+      if (knocks.length >= rounds[round].length + 1) judge();
+    }
+    function judge(){
+      mode = 'judge';
+      const pat = rounds[round], need = pat.length + 1, kn = rhythm.querySelectorAll('.kn');
+      kn.forEach(k => k.classList.remove('lit'));
+      let ok = knocks.length === need, worst = 0, msg = '';
+      if (!ok) msg = `노크 횟수가 달라요 (${knocks.length}/${need})`;
+      else {
+        const iv = []; for (let i = 1; i < knocks.length; i++) iv.push((knocks[i] - knocks[i-1]) / 1000);
+        const scale = iv.reduce((a, b) => a + b, 0) / pat.reduce((a, b) => a + b, 0);
+        const total = knocks[knocks.length - 1] - knocks[0];
+        knocks.forEach(k => rhythm.appendChild(h(`<div class="mark" style="left:${8 + (k - knocks[0]) / total * 84}%"></div>`)));
+        iv.forEach((a, i) => { const e = Math.abs(a / scale - pat[i]) / pat[i]; worst = Math.max(worst, e); if (e > 0.38) { kn[i + 1].classList.add('miss'); ok = false; } else kn[i + 1].classList.add('hit'); });
+        kn[0].classList.add('hit');
+        if (!ok) msg = '박자가 달라요!';
+      }
+      if (ok) {
+        sfx.ok(round + 3); dots[round].classList.add('on'); round++; c.progress(round, ROUNDS, '라운드');
+        lcd.textContent = round >= ROUNDS ? '"누구세요?" … 문 열림! 🚪' : '딩동! 맞았어요'; lcd.className = 'lcd';
+        if (round >= ROUNDS) { c.later(() => c.done(), 900); return; }
+        c.later(demo, 1500);
+      } else {
+        errs++; sfx.wrong(); bump(x); lives.textContent = '❤️'.repeat(MAXERR - errs) + '🖤'.repeat(errs);
+        lcd.textContent = msg; lcd.className = 'lcd err';
+        if (errs >= MAXERR) { c.later(() => c.fail('노크 암호를 3번 틀렸어요'), 800); return; }
+        c.later(demo, 1800);
+      }
+    }
+    // 마이크로 노크 순간 잡기
+    let prevPk = 0;
+    c.onFrame(() => {
+      if (!mic) return;
+      const now = performance.now(), { peak } = mic.read();
+      if (now < muteUntil || mode !== 'listen') { amb = amb * 0.95 + peak * 0.05; prevPk = peak; return; }
+      const thr = clamp(amb * 4, 0.12, 0.6);
+      if (peak > thr && armed && now - lastOnset > 110) { lastOnset = now; armed = false; onKnock(now); }
+      if (peak < thr * 0.6) armed = true;
+      if (!knocks.length) amb = amb * 0.98 + peak * 0.02;
+      // 마지막 노크 뒤 2초 조용하면 판정
+      if (knocks.length && now - knocks[knocks.length - 1] > 2000 && mode === 'listen') judge();
+      prevPk = peak;
+    });
+    c.onFrame(() => { if (!mic && knocks.length && mode === 'listen' && performance.now() - knocks[knocks.length - 1] > 2000) judge(); });
+    c.progress(0, ROUNDS, '라운드');
+    c.tip(mic ? '문을 닫고, 폰을 문에 댄 채로 노크!' : '버튼으로 노크하세요', !mic);
+    demo();
   }
 });
 

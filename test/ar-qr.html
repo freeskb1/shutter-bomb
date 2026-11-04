@@ -79,14 +79,15 @@
   <header>
     <div class="badge">🏠 펜션 살리기 · 테스트용</div>
     <h1>방 QR 인쇄</h1>
-    <p>방마다 3장: <b>메인 QR</b>(12cm, 1장에 1개)<br>+ <b>A·B 지점</b>(8cm, 1장에 2개)</p>
+    <p>방마다 4장: <b>메인 QR</b>(12cm)<br>+ <b>A·B 지점</b>(8cm, 1장에 2개) + <b>문</b>(8cm)</p>
     <div class="rooms" id="chips"></div>
     <button class="btn" onclick="window.print()">인쇄하기</button>
   </header>
   <div class="guide noprint">
     📌 붙이는 법<br>
     · 메인 QR: 방 가운데쯤 눈높이 벽 (폰으로 비춘 채 퍼즐을 풀 곳)<br>
-    · A·B 지점: 메인과 <b>멀리, 서로도 떨어진 곳</b> (방 반대편 벽, 문 옆, 창가 등)<br>
+    · A·B 지점: 메인과 <b>멀리, 서로도 떨어진 곳</b> (방 반대편 벽, 창가 등)<br>
+    · 문: 그 방 <b>문 안쪽</b> 눈높이 (노크 암호·도둑 내쫓기에서 써요)<br>
     · 너무 높거나 낮지 않게, 빛 반사 없는 곳<br>
     ✏️ 각 QR의 <b>'붙일 곳'</b> 칸을 눌러 실제 장소(예: 냉장고 옆, 현관 신발장)를 적고 인쇄하세요
   </div>
@@ -107,6 +108,7 @@
     { s: '',  label: '메인 QR', cls: 'main', where: '방 가운데 눈높이 벽' },
     { s: 'A', label: 'A 지점',     cls: 'sub a', where: '메인에서 멀리 떨어진 곳' },
     { s: 'B', label: 'B 지점',     cls: 'sub b', where: '메인·A와 떨어진 곳' },
+    { s: 'D', label: '문',         cls: 'sub d', where: '방 문 안쪽 (노크·문 잠그기용)' },
   ];
   const cards = [];
   ROOMS.forEach(r => {
