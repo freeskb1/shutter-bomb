@@ -11,6 +11,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&display=swap" rel="stylesheet">
 <!-- QR 인식: jsQR 1.4.0 (버전 고정) -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<!-- 화면 QR 생성: qrcodejs 1.0.0 (버전 고정) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   [hidden]{display:none!important}
   :root{
@@ -118,6 +120,12 @@
   .target{position:absolute;left:0;right:0;top:calc(var(--sat) + 118px);display:flex;justify-content:center;pointer-events:none}
   .target span{background:var(--panel);border:3px solid #000;border-radius:999px;padding:4px 14px;font-size:18px;box-shadow:0 0 0 2px var(--line);display:flex;align-items:center;gap:6px}
   .target b{font-size:30px;line-height:1}
+
+  /* 화면 QR (바통 / 악수) */
+  .handqr{background:#fff;border:4px solid #000;border-radius:16px;padding:14px;display:flex;justify-content:center;margin:8px auto 10px;width:max-content}
+  .handqr img,.handqr canvas{width:min(60vw,240px)!important;height:min(60vw,240px)!important;image-rendering:pixelated}
+  .count{font-family:var(--title);font-size:22px;text-align:center;color:var(--yellow)}
+  .count.low{color:var(--red)}
 
   /* 도둑 */
   .thief{position:absolute;left:0;top:0;width:120px;height:150px;margin:-75px 0 0 -60px;will-change:transform;pointer-events:none}
@@ -553,7 +561,7 @@ function qrLoop(){
 }
 
 // QR 찍기 화면 (시작 / 체크포인트 공용)
-function scanFor(spot, title, sub, badge){
+function scanFor(spot, title, sub, badge, alt){
   return new Promise(resolve => {
     showTip(''); arrowEl.hidden = true;
     setBg('cam');
@@ -572,6 +580,7 @@ function scanFor(spot, title, sub, badge){
     qrSink = text => {
       const now = performance.now(), q = parseQr(text);
       const say = (t, bad) => { if (now - lastMsg > 1500) { lastMsg = now; if (bad) sfx.wrong(); msg(t, 'err'); } };
+      if (alt) { const r = alt(text); if (r === true) return finish(); if (typeof r === 'string') return say(r, true); }
       if (!q) return say('말랑 방 QR이 아니에요');
       if (!room && q.spot === spot) room = q.room;
       if (q.room !== room) return say(`여기가 아니에요! 찍은 곳: ${esc(roomLabel(q.room))}<br>가야 할 곳: ${esc(roomLabel(room))}`, true);
@@ -927,7 +936,7 @@ M({ id:'shake', cat:'move', icon:'🍾', name:'샴페인 흔들기', needs:['mot
     c.done();
   }
 });
-function shakePhase(c, phase){
+function shakePhase(c, phase, total = 2){
   return new Promise(resolve => {
     const x = c.center(`<div class="panel"><div class="lcd">${phase === 1 ? '첫 번째' : '두 번째'} 샴페인</div><div class="light"></div><div class="engine">🍾</div>
       <div class="gauge" style="margin-top:10px"><i></i></div><div class="meter"><i></i></div><div class="label">얇은 줄 = 지금 흔드는 세기</div><div class="alt"></div></div>`);
@@ -950,7 +959,7 @@ function shakePhase(c, phase){
       p = clamp(p - dt * 0.03, 0, 1); inten *= Math.pow(0.05, dt);
       g.style.width = (p * 100) + '%'; meter.style.width = clamp(inten / 30 * 100, 0, 100) + '%';
       const s = clamp(inten / 4, 0, 8); eng.style.transform = `translate(${rand(-s,s)}px,${rand(-s,s)}px) rotate(${rand(-s,s)/2}deg)`;
-      c.gauge((phase - 1 + p) / 2, `${phase}/2`);
+      c.gauge((phase - 1 + p) / total, `${phase}/${total}`);
       if (inten > 6 && t - lastBuzz > 120) { lastBuzz = t; tone(60 + p * 200, 0, .1, 'sawtooth', .04); }
       if (p >= 1) { over = true; sfx.ok(5); lcd.textContent = '펑! 🎉'; lcd.className = 'lcd'; setTimeout(() => { x.remove(); resolve(); }, 600); }
     });
@@ -1041,15 +1050,17 @@ M({ id:'maze', cat:'move', icon:'🍳', name:'계란 굴리기', needs:['motion'
 M({ id:'blow', cat:'move', icon:'🔥', name:'숯불 살리기', needs:['mic'], limit:60,
   desc:'바비큐 숯불이 꺼져 가요! 마이크에 바람을 불어 세기를 초록 칸 안에 맞추세요. 칸 안일 때만 불이 살아나요. 너무 세면 재가 날려요! 그릴 2개: 메인 → 문 QR.',
   rules:['📍 메인 → 문 QR', '⏱️ 60초 (이동 중엔 멈춤)'],
-  async start(c){
+  async start(c){ if (await runBlow(c, 2)) c.done(); }
+});
+async function runBlow(c, tanks){
     let an = null, buf = null;
     if (Core.micStream && actx) {
       try { const src = actx.createMediaStreamSource(Core.micStream); an = actx.createAnalyser(); an.fftSize = 1024; src.connect(an); buf = new Float32Array(an.fftSize); c.addCleanup(() => { try { src.disconnect(); } catch(e){} }); } catch(e) { an = null; }
     }
-    for (let tank = 1; tank <= 2; tank++) {
-      if (tank === 2) { await c.checkpoint('D', '두 번째 그릴로 이동'); if (c.finished) return; }
+    for (let tank = 1; tank <= tanks; tank++) {
+      if (tank === 2) { await c.checkpoint('D', '두 번째 그릴로 이동'); if (c.finished) return false; }
       await new Promise(resolve => {
-        const x = c.center(`<div class="panel"><div class="lcd">그릴 ${tank} / 2 · 초록 칸 안으로 후~</div>
+        const x = c.center(`<div class="panel"><div class="lcd">그릴 ${tank} / ${tanks} · 초록 칸 안으로 후~</div>
           <div class="o2"><div class="vbar"><div class="band"></div><div class="lv"></div></div><div class="tank"><i></i><b>🔥0%</b></div></div><div class="alt"></div></div>`);
         const vbar = x.querySelector('.vbar'), band = x.querySelector('.band'), lv = x.querySelector('.lv'), fill = x.querySelector('.tank i'), pct = x.querySelector('.tank b'), alt = x.querySelector('.alt');
         let p = 0, level = 0, hb = null, over = false, bandC = rand(0.35, 0.6);
@@ -1069,15 +1080,14 @@ M({ id:'blow', cat:'move', icon:'🔥', name:'숯불 살리기', needs:['mic'], 
           lv.style.bottom = (level*100) + '%'; vbar.classList.toggle('in', inside);
           p = clamp(p + (inside ? dt / 4 : -dt * 0.05), 0, 1);
           fill.style.height = (p*100) + '%'; pct.textContent = '🔥' + Math.floor(p*100) + '%';
-          c.gauge((tank - 1 + p) / 2, `${tank}/2`);
+          c.gauge((tank - 1 + p) / tanks, `${tank}/${tanks}`);
           if (p >= 1) { over = true; sfx.ok(5); setTimeout(() => { x.remove(); resolve(); }, 500); }
         });
       });
-      if (c.finished) return;
+      if (c.finished) return false;
     }
-    c.done();
-  }
-});
+    return !c.finished;
+}
 
 // ---------- 📍 와이파이 잡기 (AR, →B) ----------
 M({ id:'antenna', cat:'real', icon:'📶', name:'와이파이 잡기', needs:['cam','motion'], ar:true, limit:60,
@@ -1176,7 +1186,9 @@ M({ id:'junk', cat:'real', icon:'🗑️', name:'분리수거', needs:['cam','mo
 M({ id:'asteroids', cat:'real', icon:'🦟', name:'모기 잡기', needs:['cam','motion'], ar:true,
   desc:'잠 못 자게 하는 모기떼! 조준점에 모기를 맞추고 화면을 탭해서 잡으세요. 1차 10마리(25초) → 문 QR에서 전기 파리채 충전 → 2차 10마리(25초).',
   rules:['📍 메인 → 문 QR(파리채 충전)', '⏱️ 회차마다 25초'],
-  async start(c){
+  async start(c){ if (await runMosquito(c, 2)) c.done(); }
+});
+async function runMosquito(c, waves){
     const v = arView(c), PER = 10, ALIVE = 3;
     const cross = h(`<div class="cross"><i></i></div>`); c.el.appendChild(cross);
     let rocks = [], hit = 0, wave = 1, armed = false;
@@ -1194,7 +1206,7 @@ M({ id:'asteroids', cat:'real', icon:'🦟', name:'모기 잡기', needs:['cam',
       for (const r of rocks) { if (r.dead) continue; const d = Math.hypot(r.x - Core.W/2, r.y - Core.H/2); if (d < bd) { bd = d; best = r; } }
       if (!best) return;
       best.dead = true; best.el.classList.add('boom'); sfx.boom(); popText(c.el, best.x, best.y - 30, '찰싹!'); const bel = best.el; setTimeout(() => bel.remove(), 500);
-      hit++; c.progress(hit, PER * 2);
+      hit++; c.progress(hit, PER * waves);
       if (hit >= PER * wave) { armed = false; return; }
       if (rocks.filter(r => !r.dead).length < Math.min(ALIVE, PER * wave - hit)) setTimeout(spawn, 350);
     });
@@ -1214,21 +1226,20 @@ M({ id:'asteroids', cat:'real', icon:'🦟', name:'모기 잡기', needs:['cam',
       cross.classList.toggle('hot', hot);
       pointArrow(any || !armed ? null : nearest);
     });
-    c.progress(0, PER * 2);
-    for (wave = 1; wave <= 2; wave++) {
+    c.progress(0, PER * waves);
+    for (wave = 1; wave <= waves; wave++) {
       if (wave === 2) {
         rocks.forEach(r => r.el.remove()); rocks = []; arrowEl.hidden = true;
-        await c.checkpoint('D', '전기 파리채 충전'); if (c.finished) return;
+        await c.checkpoint('D', '전기 파리채 충전'); if (c.finished) return false;
       }
       tipNow(); c.setLimit(25); armed = true;
       for (let i = 0; i < ALIVE; i++) spawn();
       await new Promise(resolve => { const iv = setInterval(() => { if (hit >= PER * wave || c.finished) { clearInterval(iv); resolve(); } }, 100); c.addCleanup(() => clearInterval(iv)); });
-      if (c.finished) return;
+      if (c.finished) return false;
       c.setLimit(0); sfx.ok(6);
     }
-    c.done();
-  }
-});
+    return !c.finished;
+}
 
 
 
@@ -1498,6 +1509,104 @@ M({ id:'knock', cat:'real', icon:'🚪', name:'노크 암호', needs:['mic','mot
   }
 });
 
+
+// ===================================================================
+// 2인 미션: 화면 QR(토큰)로 폰끼리 넘기기 — 서버 없음
+// MALLANG-AU:tok:<종류>:<미션>:<방>:<만든 시각>:<암호>
+// ===================================================================
+const TOK = 'MALLANG-AU:tok:';
+const makeTok = (kind, nonce) => TOK + [kind, cur.id, room || '-', Date.now().toString(36), nonce || Math.random().toString(36).slice(2, 8)].join(':');
+function parseTok(t){
+  if (!t.startsWith(TOK)) return null;
+  const [kind, mid, rm, ts, nonce] = t.slice(TOK.length).split(':');
+  return { kind, mid, room: rm, nonce, age: (Date.now() - parseInt(ts, 36)) / 1000 };
+}
+function qrEl(text){
+  const d = h(`<div class="handqr"></div>`);
+  if (typeof QRCode === 'function') new QRCode(d, { text, width: 400, height: 400, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+  else d.textContent = 'QR 생성 라이브러리를 못 불러왔어요';
+  return d;
+}
+// 화면 QR 찍기 (미션 화면 잠깐 숨기고, 그동안 시간 멈춤)
+async function scanToken(c, title, sub, alt){
+  c.paused = true; c.el.style.visibility = 'hidden';
+  await scanFor('', title, sub, '📱 친구 화면 QR', alt);
+  if (c.finished) return false;
+  c.el.style.visibility = ''; c.paused = false;
+  return true;
+}
+// 내 화면에 QR 띄우기 (secs초 지나면 실패)
+function showHandoff(c, text, title, sub, secs, btnLabel){
+  return new Promise(resolve => {
+    setBg('stars');
+    const box = c.center(`<div class="panel"><div class="lcd">${title}</div><div class="label" style="margin:0 0 4px">${sub}</div>
+      <div class="q"></div><div class="count"></div><div class="label">💡 화면 밝기를 최대로 하면 잘 찍혀요</div>
+      <button class="btn full" style="margin-top:12px">${btnLabel}</button></div>`).firstElementChild;
+    box.querySelector('.q').appendChild(qrEl(text));
+    const cnt = box.querySelector('.count'), until = performance.now() + secs * 1000;
+    let live = true;
+    c.onFrame(() => {
+      if (!live) return;
+      const left = Math.ceil((until - performance.now()) / 1000);
+      cnt.textContent = `⏳ ${Math.max(0, left)}초 안에`; cnt.classList.toggle('low', left <= 15);
+      if (left <= 0 && !c.finished) c.fail('시간 안에 넘기지 못했어요');
+    });
+    box.querySelector('.btn').onclick = () => { live = false; sfx.click(); box.parentElement.remove(); resolve(); };
+  });
+}
+
+// ---------- 👥 바비큐 준비 (릴레이: 숯불 → 바통 QR → 모기) ----------
+M({ id:'bbq', cat:'duo', icon:'🍖', name:'바비큐 준비', needs:['mic','cam','motion'], relay:true,
+  desc:'2인 릴레이! 먼저 온 사람이 숯불을 살리면 화면에 🔥바통 QR이 떠요. 다음 사람이 그 화면을 찍으면 이어서 모기를 쫓아요. 바통을 넘긴 사람은 자리를 떠도 돼요!',
+  rules:['1️⃣ 메인 QR → 🔥 숯불 살리기 (40초)', '2️⃣ 앞사람 화면의 바통 QR → 🦟 모기 10마리 (25초)', '⏳ 바통은 90초 안에 넘기기'],
+  async start(c, role){
+    if (role === 'B') {
+      setBg('cam'); c.progress(0, 10); c.tip('바통 받았다! 바비큐장 모기를 쫓아요');
+      if (await runMosquito(c, 1)) c.done();
+      return;
+    }
+    setBg('stars'); c.setLimit(40);
+    if (!(await runBlow(c, 1))) return;
+    c.setLimit(0); sfx.done();
+    c.progress(1, 2, '단계'); c.tip('다음 사람에게 화면을 보여주세요');
+    await showHandoff(c, makeTok('baton'), '🔥 불 붙었다! 바통을 넘기세요',
+      '다음 사람이 「바비큐 준비」를 열고 시작한 뒤<br>이 화면을 찍으면 모기 쫓기를 이어서 해요', 90, '넘겨줬어요 → 내 몫 완료');
+    c.done();
+  }
+});
+
+// ---------- 👥 건배 (QR 악수: 2명이 와야 시작) ----------
+M({ id:'cheers', cat:'duo', icon:'🥂', name:'건배', needs:['motion'], pair:true,
+  desc:'건배는 혼자 못 하죠! 두 명이 같이 와야 시작돼요. 한 명이 메인 QR을 찍으면 화면에 QR이 떠요 → 친구가 그걸 찍으면 친구 화면에 QR → 다시 그걸 찍으면 둘 다 시작! 각자 샴페인을 흔들어 채우면 건배!',
+  rules:['👥 서로 화면 QR 한 번씩 찍기 (QR 악수)', '🍾 각자 샴페인 1병 (초록불에만 흔들기)', '⏱️ 시작 후 45초'],
+  async start(c, role, tok){
+    if (role === 'A') {
+      const nonce = Math.random().toString(36).slice(2, 8);
+      c.tip('친구에게 화면을 보여주세요');
+      await showHandoff(c, makeTok('join', nonce), '👥 친구를 불러 오세요!', '친구가 「건배」를 열고 시작한 뒤 이 화면을 찍으면<br>친구 화면에 QR이 떠요. 그다음 아래 버튼!', 90, '친구 화면 QR 찍기 →');
+      if (c.finished) return;
+      const ok = await scanToken(c, '친구 화면 QR을 찍으세요', '친구 폰에 뜬 확인 QR을 비춰 주세요', text => {
+        const t = parseTok(text);
+        if (!t || t.kind !== 'ok' || t.mid !== cur.id) return '친구 화면의 확인 QR을 찍으세요';
+        if (t.nonce !== nonce) return '다른 사람의 QR이에요';
+        if (t.age > 65 || t.age < -20) return 'QR 시간이 지났어요';
+        return true;
+      });
+      if (!ok) return;
+    } else {
+      c.tip('친구에게 화면을 보여주세요');
+      await showHandoff(c, makeTok('ok', tok.nonce), '🤝 거의 다 됐어요!', '친구가 이 화면을 찍으면<br>아래 버튼을 누르고 같이 시작해요', 60, '친구가 찍었어요 → 시작!');
+      if (c.finished) return;
+    }
+    setBg('stars'); sfx.alarm(); c.setLimit(45);
+    c.tip('둘이 같이! 초록불에만 흔들기');
+    await shakePhase(c, 1, 1);
+    if (c.finished) return;
+    popText(c.el, Core.W / 2, Core.H / 2, '건배! 🥂');
+    c.later(() => c.done(), 600);
+  }
+});
+
 const NEED_LABEL = { cam:'📷 카메라', motion:'📱 센서', mic:'🎤 마이크' };
 
 // ===================================================================
@@ -1575,12 +1684,27 @@ async function gate(){
   if (ctx) { ctx.cleanup(); ctx = null; }
   progressRow.hidden = true; timerEl.className = '';
   const sp = cur.startSpot || '', spName = sp ? SPOT_NAMES[sp] : '메인';
-  await scanFor(sp, `${spName} QR을 찍으세요`,
-    room ? `<b style="color:var(--hud)">${esc(roomLabel(room))}</b> ${spName} QR을 네모 안에 비춰 주세요` : `미션을 할 방의 ${spName} QR을 비춰 주세요`);
+  let role = 'A', tok = null, alt = null, title = `${spName} QR을 찍으세요`,
+      sub = room ? `<b style="color:var(--hud)">${esc(roomLabel(room))}</b> ${spName} QR을 네모 안에 비춰 주세요` : `미션을 할 방의 ${spName} QR을 비춰 주세요`;
+  if (cur.relay || cur.pair) {
+    const want = cur.relay ? 'baton' : 'join', lim = cur.relay ? 95 : 95;
+    title = cur.relay ? '메인 QR 또는 바통 QR' : '메인 QR 또는 친구 화면 QR';
+    sub = cur.relay ? '먼저 하는 사람 → <b style="color:var(--hud)">메인 QR</b><br>이어 하는 사람 → 앞사람 화면의 <b style="color:var(--hud)">바통 QR</b>'
+                    : '먼저 온 사람 → <b style="color:var(--hud)">메인 QR</b><br>두 번째 사람 → 친구 화면의 <b style="color:var(--hud)">QR</b>';
+    alt = text => {
+      const t = parseTok(text); if (!t) return undefined;
+      if (t.mid !== cur.id) return '다른 미션의 QR이에요';
+      if (room && t.room !== room) return `다른 방(${esc(roomLabel(t.room))})의 QR이에요`;
+      if (t.kind !== want) return '지금 찍을 QR이 아니에요';
+      if (t.age > lim || t.age < -20) return 'QR 시간이 지났어요. 새로 띄워 달라고 하세요';
+      role = 'B'; tok = t; if (!room && t.room !== '-') room = t.room; return true;
+    };
+  }
+  await scanFor(sp, title, sub, null, alt);
   setBg(cur.ar ? 'cam' : 'stars');
   t0 = performance.now();
   ctx = makeCtx(); ctx.setLimit(cur.limit || 0);
-  try { await cur.start(ctx); } catch(e) { showTip('미션 오류: ' + e.message, true); console.error(e); }
+  try { await cur.start(ctx, role, tok); } catch(e) { showTip('미션 오류: ' + e.message, true); console.error(e); }
 }
 
 function finishMission(){
