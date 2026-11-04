@@ -573,7 +573,7 @@ function scanFor(spot, title, sub, badge){
       const now = performance.now(), q = parseQr(text);
       const say = (t, bad) => { if (now - lastMsg > 1500) { lastMsg = now; if (bad) sfx.wrong(); msg(t, 'err'); } };
       if (!q) return say('말랑 방 QR이 아니에요');
-      if (!room && q.spot === '') room = q.room;
+      if (!room && q.spot === spot) room = q.room;
       if (q.room !== room) return say(`여기가 아니에요! 찍은 곳: ${esc(roomLabel(q.room))}<br>가야 할 곳: ${esc(roomLabel(room))}`, true);
       if (q.spot !== spot) return say(`이건 ${esc(SPOT_NAMES[q.spot] || q.spot)} QR이에요.<br>${esc(SPOT_NAMES[spot])} QR을 찾으세요`, true);
       finish();
@@ -885,13 +885,11 @@ M({ id:'card', cat:'screen', icon:'🔑', name:'카드키 긁기', needs:[], lim
   }
 });
 
-// ---------- 📱 발열 체크 (문 QR) ----------
+// ---------- 🧩 발열 체크 ----------
 M({ id:'scan', cat:'screen', icon:'🌡️', name:'발열 체크', needs:['motion'],
-  desc:'문 앞 체온계(문 QR)로 가서, 손가락을 댄 채 15초 동안 가만히 있으세요.',
-  rules:['📍 문 QR로 이동', '❌ 움직이거나 손을 떼면 0초부터'],
+  desc:'체온계에 손가락을 댄 채 15초 동안 가만히 있으세요. 움직이거나 손을 떼면 처음부터!',
+  rules:['🖐️ 손가락 대고 15초', '❌ 움직이거나 손을 떼면 0초부터'],
   async start(c){
-    await c.checkpoint('D', '체온계로 이동');
-    if (c.finished) return;
     const DUR = 15;
     const x = c.center(`<div class="panel"><div class="scanbody"><div class="who">🧍</div><div class="bar"></div></div>
       <div class="readout"></div><div class="hand">🖐️</div><div class="label">손가락을 대고 있는 동안 스캔해요</div></div>`);
@@ -1400,12 +1398,10 @@ M({ id:'thief', cat:'real', icon:'🦹', name:'도둑 내쫓기', needs:['cam','
 });
 
 // ---------- 🔊 노크 암호 (문 QR, 박자 감지) ----------
-M({ id:'knock', cat:'real', icon:'🚪', name:'노크 암호', needs:['mic','motion'],
-  desc:'문 앞에 수상한 사람이! 문(문 QR)으로 가서, 문을 닫고 폰을 문에 댄 채 들려주는 박자대로 노크하세요. 3라운드!',
-  rules:['📍 문 QR로 이동', '🚪 문을 닫고 폰을 문에 대고 노크', '❌ 3번 틀리면 실패'],
+M({ id:'knock', cat:'real', icon:'🚪', name:'노크 암호', needs:['mic','motion'], startSpot:'D',
+  desc:'문 앞에 수상한 사람이! 문 QR을 찍고, 문을 닫은 채 폰을 문에 대고 들려주는 박자대로 노크하세요. 3라운드!',
+  rules:['🚪 문 QR로 시작', '🚪 문을 닫고 폰을 문에 대고 노크', '❌ 3번 틀리면 실패'],
   async start(c){
-    await c.checkpoint('D', '문으로 이동', `<b style="color:var(--yellow)">${esc(spotLabel('D'))}</b> QR을 찍으세요`);
-    if (c.finished) return;
     const PATTERNS = [
       [1, 1, 0.5, 0.5],          // 똑 똑 똑똑똑   (간격 = 다음 노크까지 박자)
       [0.5, 0.5, 1, 1],          // 똑똑똑 똑 똑
@@ -1502,83 +1498,6 @@ M({ id:'knock', cat:'real', icon:'🚪', name:'노크 암호', needs:['mic','mot
   }
 });
 
-// ---------- 👥 배달 주문 (메뉴판=메인, 주문=A) ----------
-M({ id:'code', cat:'duo', icon:'🛵', name:'배달 주문', needs:[],
-  desc:'2인 미션! 메뉴판 담당은 메인 QR에서 메뉴 6개를 보고 말로만 불러 주고, 주문 담당은 문 QR에서 듣고 주문 앱에 입력해요. 떨어져서 큰 소리로!',
-  rules:['📱 메뉴판 담당 = 메인 QR', '📱 주문 담당 = 문 QR', '❌ 3번 틀리면 실패'],
-  start(c){
-    const SY = ['🍕','🍔','🌭','🌮','🍗','🍖','🍜','🍝','🍣','🍤','🍙','🥟'];
-    const roomHash = [...(room || 'x')].reduce((a, ch) => a * 31 + ch.charCodeAt(0) | 0, 7);
-    const ansOf = set => shuffle(SY.slice(), seeded(set * 7919 + roomHash)).slice(0, 6);
-    const confirmOf = set => String((set * 37 + 11 + Math.abs(roomHash) % 97) % 900 + 100);
-    const box = c.center(`<div class="panel"></div>`).firstElementChild;
-    c.progress(0, 2);
-    function digitPad(len, onDone, title){
-      box.innerHTML = `<div class="lcd">${title}</div><div class="slots">${'<span></span>'.repeat(len)}</div>
-        <div class="grid" style="grid-template-columns:repeat(3,1fr)">${[1,2,3,4,5,6,7,8,9,'⌫',0,'✔'].map(k => `<button class="key" data-k="${k}">${k}</button>`).join('')}</div>`;
-      const slots = box.querySelectorAll('.slots span'), lcd = box.querySelector('.lcd'); let s = '';
-      box.querySelectorAll('.key').forEach(b => b.addEventListener('click', () => {
-        const k = b.dataset.k; sfx.click();
-        if (k === '⌫') s = s.slice(0, -1); else if (k === '✔') { if (s.length === len && !onDone(s, lcd)) s = ''; } else if (s.length < len) s += k;
-        slots.forEach((el, i) => el.textContent = s[i] || '');
-      }));
-    }
-    function chooseRole(){
-      box.innerHTML = `<div class="lcd">역할을 고르세요</div>
-        <button class="btn full" id="rS">📋 메뉴판 담당<br><small style="font-family:var(--body);font-size:15px">메인 QR · 메뉴를 보고 말로 불러 주기</small></button>
-        <div style="height:16px"></div>
-        <button class="btn full" id="rR" style="background:#7be08f">📲 주문 담당<br><small style="font-family:var(--body);font-size:15px">문 QR · 듣고 주문 앱에 입력</small></button>`;
-      box.querySelector('#rS').onclick = () => { sfx.click(); sender(); };
-      box.querySelector('#rR').onclick = async () => { sfx.click(); box.innerHTML = ''; await c.checkpoint('D', '주문 담당 자리로 이동'); if (!c.finished) receiver(); };
-      c.tip('두 사람이 서로 다른 역할을 고르세요');
-    }
-    function sender(){
-      const set = 10 + Math.floor(Math.random() * 90), ans = ansOf(set);
-      box.innerHTML = `<div class="lcd">주문 담당에게 가게 번호를 불러 주세요</div><div class="codeshow">${set}</div>
-        <div class="label" style="margin:0 0 4px">아래 메뉴 6개를 순서대로 말로만! (화면 보여주기 금지)</div>
-        <div class="syms">${ans.map(s => `<span>${s}</span>`).join('')}</div>
-        <button class="btn full" id="toConfirm" style="margin-top:10px">주문 완료됐대요 → 승인번호 입력</button>`;
-      c.progress(1, 2); c.tip('예: "첫 번째는 피자, 두 번째는 새우튀김"');
-      box.querySelector('#toConfirm').onclick = () => {
-        sfx.click();
-        digitPad(3, (s, lcd) => {
-          if (s === confirmOf(set)) { sfx.ok(4); lcd.textContent = '주문 성공! 🛵'; c.progress(2, 2); c.later(() => c.done(), 500); return true; }
-          sfx.wrong(); lcd.textContent = '승인번호가 달라요'; lcd.className = 'lcd err'; return false;
-        }, '주문 담당 화면의 승인번호 3자리');
-      };
-    }
-    function receiver(){
-      digitPad(2, s => { symbolInput(parseInt(s, 10)); return true; }, '메뉴판 담당이 부른 가게 번호');
-      c.tip('메뉴판 담당에게 가게 번호를 물어보세요');
-    }
-    function symbolInput(set){
-      const ans = ansOf(set); let cur6 = [], errs = 0;
-      box.innerHTML = `<div class="lcd">가게 ${set} · 듣고 순서대로 6개</div><div class="slots">${'<span></span>'.repeat(6)}</div>
-        <div class="grid" style="grid-template-columns:repeat(4,1fr)">${SY.map(k => `<button class="key sym" data-k="${k}">${k}</button>`).join('')}</div>
-        <div class="row"><button class="btn ghost" id="clr">지우기</button><span class="label" id="lv" style="margin:8px 0 0">목숨 ❤️❤️❤️</span></div>`;
-      const slots = box.querySelectorAll('.slots span'), lcd = box.querySelector('.lcd'), lv = box.querySelector('#lv');
-      const render = () => slots.forEach((el, i) => el.textContent = cur6[i] || '');
-      box.querySelector('#clr').onclick = () => { cur6 = []; render(); };
-      box.querySelectorAll('.key').forEach(b => b.addEventListener('click', () => {
-        if (cur6.length >= 6) return; sfx.click(); cur6.push(b.dataset.k); render();
-        if (cur6.length < 6) return;
-        if (cur6.join('') === ans.join('')) {
-          sfx.ok(4); c.progress(1, 2);
-          box.innerHTML = `<div class="lcd">주문 완료! 메뉴판 담당에게 승인번호를 불러 주세요</div><div class="codeshow">${confirmOf(set)}</div>
-            <button class="btn full" id="fin" style="margin-top:14px">불러 줬어요 → 완료</button>`;
-          box.querySelector('#fin').onclick = () => { c.progress(2, 2); c.done(); };
-        } else {
-          errs++; sfx.wrong(); bump(box); lv.textContent = '목숨 ' + '❤️'.repeat(3 - errs) + '🖤'.repeat(errs);
-          if (errs >= 3) { c.fail('3번 틀렸어요'); return; }
-          lcd.textContent = '주문이 틀렸어요! 다시 들어 보세요'; lcd.className = 'lcd err';
-          setTimeout(() => { cur6 = []; render(); lcd.className = 'lcd'; lcd.textContent = `가게 ${set} · 듣고 순서대로 6개`; }, 700);
-        }
-      }));
-    }
-    chooseRole();
-  }
-});
-
 const NEED_LABEL = { cam:'📷 카메라', motion:'📱 센서', mic:'🎤 마이크' };
 
 // ===================================================================
@@ -1655,8 +1574,9 @@ $('startBtn').addEventListener('click', () => {
 async function gate(){
   if (ctx) { ctx.cleanup(); ctx = null; }
   progressRow.hidden = true; timerEl.className = '';
-  await scanFor('', '메인 QR을 찍으세요',
-    room ? `<b style="color:var(--hud)">${esc(roomLabel(room))}</b> 메인 QR을 네모 안에 비춰 주세요` : '미션을 할 방의 메인 QR을 비춰 주세요');
+  const sp = cur.startSpot || '', spName = sp ? SPOT_NAMES[sp] : '메인';
+  await scanFor(sp, `${spName} QR을 찍으세요`,
+    room ? `<b style="color:var(--hud)">${esc(roomLabel(room))}</b> ${spName} QR을 네모 안에 비춰 주세요` : `미션을 할 방의 ${spName} QR을 비춰 주세요`);
   setBg(cur.ar ? 'cam' : 'stars');
   t0 = performance.now();
   ctx = makeCtx(); ctx.setLimit(cur.limit || 0);
