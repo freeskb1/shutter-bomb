@@ -82,7 +82,7 @@
 
   ROOMS.forEach(r => {
     const data = 'MALLANG-AU:room:' + r.id;
-    const url = new URL('ar-junk.html?room=' + encodeURIComponent(r.id), location.href).href;
+    const url = new URL('mission.html?room=' + encodeURIComponent(r.id), location.href).href;
     const card = document.createElement('section');
     card.className = 'card';
     card.innerHTML = `
@@ -90,7 +90,7 @@
       <h2>${esc(r.name)}</h2>
       <div class="qr"></div>
       <div class="code">${esc(data)}</div>
-      <a class="link" href="${esc(url)}">이 방으로 미션 열기 →<br>${esc(url)}</a>`;
+      <a class="link" href="${esc(url)}">이 방 미션 목록 열기 →<br>${esc(url)}</a>`;
     wrap.appendChild(card);
     if (typeof QRCode === 'function') {
       new QRCode(card.querySelector('.qr'), {

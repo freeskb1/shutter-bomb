@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#05060f">
+<title>말랑 미션</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&display=swap" rel="stylesheet">
+<!-- QR 인식: jsQR 1.4.0 (버전 고정) -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<style>
+  [hidden]{display:none!important}
+  :root{
+    --bg:#05060f; --ink:#eaf2ff; --dim:#8fa3c8; --hud:#7cf7ff; --yellow:#ffd43b;
+    --red:#ff5c7a; --green:#5cffb0; --blue:#4da3ff; --pink:#ff7ad9;
+    --panel:rgba(10,16,38,.92); --line:rgba(124,247,255,.45);
+    --title:'Black Han Sans','Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;
+    --body:'Do Hyeon','Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;
+    --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+    --sal:env(safe-area-inset-left,0px); --sar:env(safe-area-inset-right,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);overflow:hidden;font-family:var(--body);
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;touch-action:none}
+  button{font-family:inherit;color:inherit}
+
+  /* 배경 */
+  #cam,#stars{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+  #cam{object-fit:cover;background:#000}
+  #stars{background:radial-gradient(ellipse at 50% 30%,#141a3d 0%,#070916 60%,#03040a 100%)}
+  #tint{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at center,rgba(5,6,15,0) 55%,rgba(5,6,15,.55) 100%)}
+
+  /* 미션 무대 */
+  #stage{position:fixed;inset:0;z-index:2;overflow:hidden}
+  .layer{position:absolute;inset:0}
+  .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:calc(var(--sat) + 112px) calc(var(--sar) + 14px) calc(var(--sab) + 96px) calc(var(--sal) + 14px)}
+  .panel{position:relative;background:var(--panel);border:3px solid #000;border-radius:22px;
+    box-shadow:0 0 0 2px var(--line),0 8px 0 #000;padding:16px;width:min(94vw,400px)}
+  .lcd{font-family:var(--title);font-size:20px;text-align:center;color:var(--green);background:#03140c;border:3px solid #000;
+    border-radius:12px;padding:10px 8px;margin-bottom:14px;min-height:50px;text-shadow:0 0 8px rgba(92,255,176,.6);word-break:keep-all}
+  .lcd.err{color:var(--red);text-shadow:0 0 8px rgba(255,92,122,.6)}
+  .big-emoji{font-size:84px;line-height:1;text-align:center;filter:drop-shadow(0 0 16px rgba(255,212,59,.6))}
+  .gauge{height:28px;border:3px solid #000;border-radius:14px;background:rgba(0,0,0,.6);overflow:hidden;box-shadow:0 4px 0 #000}
+  .gauge i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffb703,var(--yellow))}
+  .gauge.green i{background:linear-gradient(90deg,#1fd18b,var(--green))}
+  .gauge.blue i{background:linear-gradient(90deg,#2b7cff,var(--hud))}
+  .meter{height:10px;border-radius:5px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:10px}
+  .meter i{display:block;height:100%;width:0;background:var(--hud);transition:width .08s}
+  .label{font-size:17px;color:var(--dim);text-align:center;margin:10px 0 0;word-break:keep-all}
+
+  /* AR */
+  .junk{position:absolute;left:0;top:0;width:110px;height:110px;margin:-55px 0 0 -55px;will-change:transform}
+  .junk .float{position:absolute;inset:0;animation:bob 2.6s ease-in-out infinite}
+  .junk .glow{position:absolute;inset:14px;border-radius:50%;background:radial-gradient(circle,rgba(255,212,59,.55) 0%,rgba(255,212,59,.18) 45%,rgba(255,212,59,0) 70%);animation:pulse 1.6s ease-in-out infinite}
+  .junk .ring{position:absolute;inset:6px;border-radius:50%;border:3px dashed var(--yellow);opacity:.85;animation:spin 6s linear infinite;box-shadow:0 0 14px rgba(255,212,59,.5)}
+  .junk .emo{position:absolute;inset:0;display:grid;place-items:center;font-size:50px;line-height:1;filter:drop-shadow(0 0 8px rgba(255,212,59,.9)) drop-shadow(0 3px 0 rgba(0,0,0,.6));animation:wobble 3.4s ease-in-out infinite}
+  .junk.got{pointer-events:none}
+  .junk.got .float{animation:gone .55s ease-in forwards}
+  .rock{position:absolute;left:0;top:0;width:90px;height:90px;margin:-45px 0 0 -45px;will-change:transform;pointer-events:none}
+  .rock .emo{position:absolute;inset:0;display:grid;place-items:center;font-size:56px;animation:spin 4s linear infinite;
+    filter:drop-shadow(0 0 10px rgba(255,120,60,.9))}
+  .rock.boom .emo{animation:gone .45s ease-in forwards}
+  .cross{position:absolute;left:50%;top:50%;width:84px;height:84px;margin:-42px 0 0 -42px;pointer-events:none}
+  .cross::before,.cross::after{content:"";position:absolute;background:var(--red);box-shadow:0 0 8px var(--red)}
+  .cross::before{left:50%;top:0;bottom:0;width:3px;margin-left:-1.5px}
+  .cross::after{top:50%;left:0;right:0;height:3px;margin-top:-1.5px}
+  .cross i{position:absolute;inset:16px;border:3px solid var(--red);border-radius:50%;box-shadow:0 0 10px var(--red)}
+  .cross.hot i{border-color:var(--yellow)}
+  .laser{position:absolute;left:50%;bottom:0;width:6px;margin-left:-3px;background:linear-gradient(var(--yellow),rgba(255,92,122,0));
+    border-radius:3px;box-shadow:0 0 12px var(--yellow);animation:laser .18s ease-out forwards;pointer-events:none}
+  @keyframes laser{from{opacity:1}to{opacity:0}}
+  .pop{position:absolute;left:0;top:0;z-index:3;font-family:var(--title);font-size:30px;color:var(--yellow);-webkit-text-stroke:1.5px #000;pointer-events:none;animation:popup .8s ease-out forwards}
+  @keyframes bob{0%,100%{transform:translateY(-6px)}50%{transform:translateY(6px)}}
+  @keyframes pulse{0%,100%{transform:scale(.9);opacity:.8}50%{transform:scale(1.1);opacity:1}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes wobble{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+  @keyframes gone{0%{transform:scale(1);opacity:1}35%{transform:scale(1.35);opacity:1}100%{transform:scale(0) rotate(200deg);opacity:0}}
+  @keyframes popup{0%{transform:translate(-50%,-50%) translateY(0);opacity:1}100%{transform:translate(-50%,-50%) translateY(-60px);opacity:0}}
+  @keyframes shakeX{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+  .shake{animation:shakeX .35s}
+  #arrow{position:fixed;left:0;top:0;z-index:4;width:54px;height:54px;margin:-27px 0 0 -27px;pointer-events:none;will-change:transform}
+  #arrow svg{width:100%;height:100%;filter:drop-shadow(0 0 8px rgba(255,212,59,.8));animation:nudge .9s ease-in-out infinite}
+  @keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
+
+  /* 배선 */
+  .wires{position:relative;height:340px}
+  .wires svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .node{position:absolute;width:46px;height:34px;margin-top:-17px;border:3px solid #000;border-radius:8px;display:grid;place-items:center;
+    font-size:16px;color:#000;box-shadow:0 3px 0 #000}
+  .node.l{left:0;border-radius:4px 10px 10px 4px}
+  .node.r{right:0;border-radius:10px 4px 4px 10px}
+  .node.on{box-shadow:0 0 12px currentColor,0 3px 0 #000}
+
+  /* 숫자 / 패턴 / 키패드 */
+  .grid{display:grid;gap:10px}
+  .tile{aspect-ratio:1/1;border:3px solid #000;border-radius:14px;background:#1b2550;box-shadow:0 5px 0 #000;
+    font-family:var(--title);font-size:34px;color:#fff;display:grid;place-items:center;touch-action:manipulation}
+  .tile:active{transform:translateY(5px);box-shadow:0 0 0 #000}
+  .tile.ok{background:#14674a;color:var(--green);box-shadow:0 0 0 #000;transform:translateY(5px)}
+  .tile.blank{visibility:hidden}
+  .pad{aspect-ratio:1/1;border:3px solid #000;border-radius:16px;background:#16204a;box-shadow:0 5px 0 #000;touch-action:manipulation}
+  .pad.lit{background:var(--hud);box-shadow:0 0 22px var(--hud),0 5px 0 #000}
+  .pad.lock{pointer-events:none}
+  .dots{display:flex;justify-content:center;gap:8px;margin-bottom:12px}
+  .dots i{width:14px;height:14px;border-radius:50%;border:2px solid #000;background:#1b2550}
+  .dots i.on{background:var(--green);box-shadow:0 0 8px var(--green)}
+  .key{border:3px solid #000;border-radius:12px;background:#dfe7ff;color:#111;box-shadow:0 4px 0 #000;
+    font-family:var(--title);font-size:26px;padding:10px 0;touch-action:manipulation}
+  .key:active{transform:translateY(4px);box-shadow:0 0 0 #000}
+  .key.sym{font-size:34px;padding:6px 0;background:#26305e}
+  .slots{display:flex;justify-content:center;gap:8px;margin-bottom:12px}
+  .slots span{width:58px;height:58px;border:3px solid #000;border-radius:12px;background:#0b1230;display:grid;place-items:center;font-size:34px;
+    box-shadow:inset 0 0 0 2px var(--line)}
+  .codeshow{font-family:var(--title);font-size:64px;text-align:center;color:var(--yellow);-webkit-text-stroke:2px #000;letter-spacing:6px}
+  .syms{display:flex;justify-content:center;gap:8px;margin:8px 0}
+  .syms span{width:72px;height:72px;border-radius:14px;background:#0b1230;border:3px solid #000;display:grid;place-items:center;font-size:44px}
+
+  /* 카드 */
+  .slot{position:relative;height:150px;border:3px solid #000;border-radius:16px;background:#0b1230;overflow:hidden;
+    box-shadow:inset 0 0 0 2px var(--line)}
+  .slot::after{content:"";position:absolute;left:10px;right:10px;top:50%;height:6px;margin-top:-3px;border-radius:3px;background:#000;opacity:.6}
+  .card{position:absolute;left:8px;top:16px;width:150px;height:116px;border:3px solid #000;border-radius:12px;
+    background:linear-gradient(135deg,#ffe08a,#ffb703);box-shadow:0 4px 0 #000;color:#000;padding:10px;z-index:1;touch-action:none}
+  .card b{font-family:var(--title);font-weight:normal;font-size:18px}
+  .card .chip{width:34px;height:26px;border-radius:6px;background:#c9a227;border:2px solid #000;margin:8px 0}
+  .card small{font-size:13px}
+
+  /* 스캔 */
+  .scanbody{position:relative;height:230px;display:grid;place-items:center;overflow:hidden;border-radius:16px;background:#061a24;border:3px solid #000}
+  .scanbody .who{font-size:150px;line-height:1;filter:drop-shadow(0 0 14px rgba(124,247,255,.7))}
+  .scanbody .bar{position:absolute;left:0;right:0;height:4px;background:var(--hud);box-shadow:0 0 16px 4px rgba(124,247,255,.7);top:10%}
+  .scanbody.run .bar{animation:scanmove 1.6s ease-in-out infinite alternate}
+  .hand{margin:14px auto 0;width:150px;height:150px;border-radius:50%;border:4px dashed var(--hud);display:grid;place-items:center;
+    font-size:64px;touch-action:none;background:rgba(124,247,255,.06)}
+  .hand.on{border-style:solid;background:rgba(124,247,255,.25);box-shadow:0 0 30px rgba(124,247,255,.6)}
+  .readout{font-size:16px;color:var(--hud);min-height:66px;margin-top:10px;line-height:1.35}
+
+  /* 미로 */
+  canvas.maze{display:block;margin:0 auto;border:3px solid #000;border-radius:10px;box-shadow:0 0 0 2px var(--line)}
+
+  /* 한 바퀴 */
+  .ringwrap{position:relative;width:240px;height:240px;margin:0 auto;border-radius:50%;
+    background:conic-gradient(var(--yellow) calc(var(--p,0)*1%),rgba(255,255,255,.1) 0);box-shadow:0 0 0 4px #000}
+  .ringwrap::after{content:"";position:absolute;inset:22px;border-radius:50%;background:#0b1230;box-shadow:0 0 0 4px #000}
+  .ringwrap .needle{position:absolute;inset:0;z-index:1;display:grid;place-items:center;font-size:70px}
+  .ringwrap .pct{position:absolute;left:0;right:0;bottom:44px;z-index:1;text-align:center;font-family:var(--title);font-size:22px}
+
+  /* 엔진 / 산소 */
+  .engine{font-size:110px;text-align:center;line-height:1.1}
+  .tank{position:relative;width:120px;height:220px;margin:0 auto;border:4px solid #000;border-radius:40px;background:#0b1230;overflow:hidden;box-shadow:0 0 0 2px var(--line)}
+  .tank i{position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(#7cf7ff,#2b7cff)}
+  .tank b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--title);font-weight:normal;font-size:26px;z-index:1;text-shadow:0 2px 0 #000}
+
+  /* HUD */
+  #hud{position:fixed;left:0;right:0;top:0;z-index:5;pointer-events:none;padding:calc(var(--sat) + 8px) calc(var(--sar) + 14px) 0 calc(var(--sal) + 14px)}
+  #diag{font-size:12px;line-height:1.35;color:var(--hud);background:rgba(0,0,0,.55);border:1px solid var(--line);border-radius:8px;padding:4px 8px;margin-bottom:6px;word-break:keep-all}
+  #diag .bad{color:var(--red)} #diag .ok{color:var(--green)}
+  #mname{font-family:var(--title);font-size:20px;text-shadow:0 2px 0 #000;margin-bottom:4px}
+  .bar-row{display:flex;align-items:center;gap:10px}
+  #count{font-family:var(--title);font-size:26px;color:var(--yellow);-webkit-text-stroke:1px #000;text-shadow:0 3px 0 #000;white-space:nowrap}
+  #count small{font-size:18px;color:var(--ink)}
+  .progress{flex:1;height:16px;border:3px solid #000;border-radius:10px;background:rgba(0,0,0,.55);overflow:hidden;box-shadow:0 3px 0 #000}
+  .progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffb703,var(--yellow));transition:width .3s cubic-bezier(.3,1.6,.5,1)}
+  #timer{font-family:var(--title);font-size:18px;text-shadow:0 2px 0 #000;min-width:48px;text-align:right}
+  #tip{position:fixed;left:0;right:0;bottom:0;z-index:5;pointer-events:none;text-align:center;padding:0 calc(var(--sar) + 16px) calc(var(--sab) + 16px) calc(var(--sal) + 16px)}
+  #tip span{display:inline-block;background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:8px 14px;font-size:17px;line-height:1.35;word-break:keep-all}
+  #tip span.warn{border-color:var(--yellow);color:var(--yellow)}
+
+  /* QR 스캔 */
+  #scan{position:fixed;inset:0;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;
+    padding:calc(var(--sat) + 60px) calc(var(--sar) + 20px) calc(var(--sab) + 24px) calc(var(--sal) + 20px)}
+  #scan h2{margin:0 0 6px;font-family:var(--title);font-weight:normal;font-size:28px;color:var(--yellow);-webkit-text-stroke:1px #000;text-shadow:0 3px 0 #000;text-align:center}
+  #scan .sub{margin:0 0 16px;font-size:19px;text-align:center;text-shadow:0 2px 4px #000;word-break:keep-all}
+  .frame{position:relative;width:min(66vw,290px);aspect-ratio:1/1}
+  .frame::before,.frame::after,.frame i::before,.frame i::after{content:"";position:absolute;width:44px;height:44px;border:5px solid var(--hud);filter:drop-shadow(0 0 6px rgba(124,247,255,.8))}
+  .frame::before{left:0;top:0;border-right:0;border-bottom:0;border-radius:14px 0 0 0}
+  .frame::after{right:0;top:0;border-left:0;border-bottom:0;border-radius:0 14px 0 0}
+  .frame i::before{left:0;bottom:0;border-right:0;border-top:0;border-radius:0 0 0 14px}
+  .frame i::after{right:0;bottom:0;border-left:0;border-top:0;border-radius:0 0 14px 0}
+  .frame .scanline{position:absolute;left:8%;right:8%;height:3px;top:10%;border-radius:2px;background:var(--hud);box-shadow:0 0 12px 2px rgba(124,247,255,.8);animation:scanmove 2s ease-in-out infinite alternate}
+  @keyframes scanmove{to{top:88%}}
+  #scan.flash .frame::before,#scan.flash .frame::after,#scan.flash .frame i::before,#scan.flash .frame i::after{border-color:var(--green)}
+  #scanMsg{margin-top:16px;min-height:30px;font-size:19px;text-align:center;text-shadow:0 2px 4px #000;word-break:keep-all}
+  #scanMsg.err{color:var(--red)} #scanMsg.ok{color:var(--green)}
+  #scanMsg span{display:inline-block;background:rgba(0,0,0,.6);border-radius:10px;padding:6px 12px}
+  #scan .btn{pointer-events:auto;margin-top:12px}
+
+  /* 오버레이 */
+  .overlay{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+    background:radial-gradient(ellipse at 50% 20%,#1a2150 0%,#0a0d22 55%,#04050c 100%);
+    padding:calc(var(--sat) + 22px) calc(var(--sar) + 20px) calc(var(--sab) + 18px) calc(var(--sal) + 20px);overflow:hidden}
+  .overlay.glass{background:rgba(4,6,16,.84);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+  .overlay.scroll{justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+  .badge{display:inline-block;font-size:14px;letter-spacing:2px;color:var(--hud);border:2px solid var(--line);border-radius:999px;padding:4px 12px;margin-bottom:12px}
+  .overlay h1{margin:0;font-family:var(--title);font-weight:normal;font-size:clamp(38px,11vw,54px);line-height:1.08;color:var(--yellow);
+    -webkit-text-stroke:2px #000;text-shadow:0 5px 0 #000,0 0 30px rgba(255,212,59,.35)}
+  .hero{font-size:72px;margin:4px 0 8px;filter:drop-shadow(0 0 14px rgba(255,212,59,.7));animation:bob 2.6s ease-in-out infinite}
+  .desc{font-size:20px;line-height:1.45;margin:14px 0 8px;max-width:360px;word-break:keep-all}
+  .needs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:6px 0 22px}
+  .needs span{font-size:14px;border:2px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--hud)}
+  .btn{appearance:none;-webkit-appearance:none;font-family:var(--title);font-size:24px;color:#111;background:var(--yellow);border:4px solid #000;border-radius:18px;
+    padding:13px 32px;box-shadow:0 7px 0 #000;transition:transform .06s,box-shadow .06s;cursor:pointer;touch-action:manipulation}
+  .btn:active{transform:translateY(7px);box-shadow:0 0 0 #000}
+  .btn.ghost{background:#dfe7ff;font-size:17px;padding:9px 18px;border-width:3px;box-shadow:0 5px 0 #000}
+  .btn.ghost:active{transform:translateY(5px);box-shadow:0 0 0 #000}
+  .btn.big{min-width:220px}
+  .btn.full{width:100%}
+  .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+  .env{position:absolute;left:0;right:0;bottom:0;padding:0 calc(var(--sar) + 12px) calc(var(--sab) + 8px) calc(var(--sal) + 12px);font-size:12px;line-height:1.4;color:var(--dim);word-break:keep-all}
+  .env .ok{color:var(--green)} .env .bad{color:var(--red)}
+  .back{position:absolute;left:calc(var(--sal) + 14px);top:calc(var(--sat) + 12px);font-size:17px;color:var(--dim);text-decoration:none}
+
+  /* 메뉴 */
+  #menu .wrap{width:100%;max-width:520px;padding-bottom:30px}
+  .rooms{display:flex;gap:8px;justify-content:center;margin:12px 0 4px}
+  .chip{border:3px solid #000;border-radius:999px;background:#26305e;color:#fff;font-size:18px;padding:7px 16px;box-shadow:0 4px 0 #000;touch-action:manipulation}
+  .chip.on{background:var(--hud);color:#000}
+  .cat{font-family:var(--title);font-size:20px;color:var(--hud);text-align:left;margin:22px 4px 8px}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .mcard{display:block;text-align:left;text-decoration:none;color:var(--ink);background:var(--panel);border:3px solid #000;border-radius:16px;
+    box-shadow:0 0 0 2px var(--line),0 5px 0 #000;padding:12px;touch-action:manipulation}
+  .mcard:active{transform:translateY(5px);box-shadow:0 0 0 2px var(--line),0 0 0 #000}
+  .mcard .e{font-size:34px}
+  .mcard b{display:block;font-family:var(--title);font-weight:normal;font-size:19px;margin:4px 0 2px}
+  .mcard small{font-size:14px;color:var(--dim);line-height:1.3;display:block;word-break:keep-all}
+  #doneTime{font-family:var(--title);font-size:56px;color:#fff;-webkit-text-stroke:2px #000;text-shadow:0 5px 0 #000;margin:10px 0 2px}
+  #done h1{color:var(--green)}
+  .confetti{position:absolute;top:-30px;font-size:26px;animation:fall linear forwards;pointer-events:none}
+  @keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+</style>
+</head>
+<body>
+
+<video id="cam" playsinline muted autoplay hidden></video>
+<canvas id="stars"></canvas>
+<div id="tint"></div>
+<div id="stage"></div>
+<div id="arrow" hidden><svg viewBox="0 0 54 54"><path d="M14 9 L46 27 L14 45 L22 27 Z" fill="#ffd43b" stroke="#000" stroke-width="3.5" stroke-linejoin="round"/></svg></div>
+
+<div id="hud" hidden>
+  <div id="diag"></div>
+  <div id="mname"></div>
+  <div class="bar-row" id="progressRow" hidden>
+    <div id="count">0 <small>/ 5</small></div>
+    <div class="progress"><i id="bar"></i></div>
+    <div id="timer">0:00</div>
+  </div>
+</div>
+
+<div id="scan" hidden>
+  <h2>방 QR을 찍으세요</h2>
+  <p class="sub" id="scanSub"></p>
+  <div class="frame"><i></i><div class="scanline"></div></div>
+  <div id="scanMsg"></div>
+  <button class="btn ghost" id="skipQr">QR 없이 시작 (테스트용)</button>
+</div>
+
+<div id="tip" hidden><span id="tipText"></span></div>
+
+<!-- 미션 목록 -->
+<section class="overlay scroll" id="menu" hidden>
+  <div class="wrap">
+    <div class="badge">리얼 어몽어스 · 미션 테스트</div>
+    <h1>말랑 미션</h1>
+    <div class="desc" style="margin:10px auto 0">방을 고르고 미션을 눌러 보세요.<br>미션은 그 방 QR을 찍으면 시작돼요.</div>
+    <div class="rooms" id="roomChips"></div>
+    <div id="menuList"></div>
+    <div class="row" style="margin-top:26px">
+      <button class="btn ghost" id="randomBtn">🎲 아무 미션이나</button>
+      <a class="btn ghost" href="ar-qr.html" style="text-decoration:none">🖨️ 방 QR 인쇄</a>
+    </div>
+  </div>
+</section>
+
+<!-- 미션 소개 / 시작 -->
+<section class="overlay" id="intro" hidden>
+  <a class="back" id="backLink" href="#">← 미션 목록</a>
+  <div class="badge" id="introCat"></div>
+  <div class="hero" id="introIcon"></div>
+  <h1 id="introName"></h1>
+  <div class="desc" id="introDesc"></div>
+  <div class="needs" id="introNeeds"></div>
+  <button class="btn big" id="startBtn">시작</button>
+  <div class="env" id="env"></div>
+</section>
+
+<!-- 완료 -->
+<section class="overlay glass" id="done" hidden>
+  <div class="badge">MISSION COMPLETE</div>
+  <h1>미션 완료!</h1>
+  <div id="doneTime">0:00</div>
+  <div class="label" id="doneName" style="margin-bottom:24px"></div>
+  <button class="btn big" id="againBtn">다시 하기</button>
+  <div class="row"><a class="btn ghost" id="toMenu" href="#" style="text-decoration:none">미션 목록</a></div>
+</section>
+
+<script>
+(() => {
+'use strict';
+
+// ===================================================================
+// 설정
+// ===================================================================
+const QR_PREFIX = 'MALLANG-AU:room:';
+const ROOMS = [['living','거실'],['room3','침실3'],['balcony','발코니']];
+const ROOM_NAMES = Object.fromEntries(ROOMS);
+const VFOV = 62;
+const CATS = { puzzle:'🧩 퍼즐', action:'📱 폰 동작', ar:'🛰️ AR', duo:'👥 2인' };
+
+const params = new URLSearchParams(location.search);
+let room = (params.get('room') || '').trim() || null;
+const missionId = params.get('m');
+const roomLabel = id => ROOM_NAMES[id] ? `${ROOM_NAMES[id]} (${id})` : id;
+
+// ===================================================================
+// DOM / 유틸
+// ===================================================================
+const $ = id => document.getElementById(id);
+const cam = $('cam'), stars = $('stars'), stage = $('stage'), arrowEl = $('arrow');
+const hud = $('hud'), diag = $('diag'), mname = $('mname'), progressRow = $('progressRow'), countEl = $('count'), barEl = $('bar'), timerEl = $('timer');
+const scan = $('scan'), scanSub = $('scanSub'), scanMsg = $('scanMsg'), skipQr = $('skipQr');
+const tip = $('tip'), tipText = $('tipText');
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm360 = a => ((a % 360) + 360) % 360;
+const wrap180 = a => { a = norm360(a); return a > 180 ? a - 360 : a; };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const rand = (a, b) => a + Math.random() * (b - a);
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const k = Math.floor(Math.random() * (i + 1)); [a[i], a[k]] = [a[k], a[i]]; } return a; };
+const fmtTime = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+const h = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
+function seeded(seed){ let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function bump(el){ el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+
+// ===================================================================
+// 사운드
+// ===================================================================
+let actx = null;
+function unlockAudio(){
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    if (!actx) actx = new AC();
+    if (actx.state === 'suspended') actx.resume();
+    const b = actx.createBuffer(1, 1, 22050), s = actx.createBufferSource(); s.buffer = b; s.connect(actx.destination); s.start(0);
+  } catch(e) {}
+}
+function tone(freq, start, dur, type='square', vol=0.12, slideTo=null){
+  if (!actx) return;
+  const t = actx.currentTime + start, o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + dur + 0.02);
+}
+const sfx = {
+  ok(n=1){ const b = 660 + n*50; tone(b,0,.09,'square',.1); tone(b*1.5,.07,.14,'square',.09); },
+  click(){ tone(900,0,.05,'square',.06); },
+  wrong(){ tone(220,0,.2,'sawtooth',.09,140); },
+  scanOk(){ tone(880,0,.08,'sine',.15); tone(1320,.08,.14,'sine',.13); },
+  pad(i){ tone([262,330,392,440,523,587,659,784,880][i],0,.28,'triangle',.14); },
+  shoot(){ tone(1400,0,.12,'square',.06,300); },
+  boom(){ tone(160,0,.3,'sawtooth',.12,50); },
+  done(){ [523,659,784,1047].forEach((f,i)=>tone(f,i*.11,.22,'triangle',.13)); tone(1568,.48,.4,'sine',.1); },
+};
+
+// ===================================================================
+// 센서 / 카메라 / 마이크 공통 상태
+// ===================================================================
+const Core = {
+  camOk:false, camResult:'-', permResult:'-', micResult:'-', micStream:null,
+  ori:{ ok:false, count:0, yaw:0, pitch:0, alpha:0, beta:0, gamma:0 },
+  motCount:0, view:null,
+  W: innerWidth, H: innerHeight,
+};
+const frameFns = new Set(), motionFns = new Set();
+
+window.addEventListener('deviceorientation', e => {
+  if (e.alpha == null && e.webkitCompassHeading == null) return;
+  const o = Core.ori;
+  o.yaw = norm360((typeof e.webkitCompassHeading === 'number' && e.webkitCompassHeading >= 0) ? e.webkitCompassHeading : 360 - (e.alpha || 0));
+  o.alpha = e.alpha || 0; o.beta = e.beta || 0; o.gamma = e.gamma || 0;
+  o.pitch = clamp(o.beta - 90, -89, 89);
+  o.ok = true; o.count++;
+}, true);
+
+let lastAcc = null;
+window.addEventListener('devicemotion', e => {
+  const a = e.accelerationIncludingGravity;
+  if (!a || a.x == null) return;
+  Core.motCount++;
+  let d = 0;
+  if (lastAcc) d = Math.abs(a.x - lastAcc.x) + Math.abs(a.y - lastAcc.y) + Math.abs(a.z - lastAcc.z);
+  lastAcc = { x:a.x, y:a.y, z:a.z };
+  // interval: iOS는 초, 일부 브라우저는 ms
+  let iv = e.interval || 16; if (iv < 1) iv *= 1000;
+  motionFns.forEach(fn => fn(d, iv));
+}, true);
+
+function renderDiag(){
+  const f = (ok, t) => `<span class="${ok?'ok':'bad'}">${esc(t)}</span>`;
+  diag.innerHTML = `카메라 ${f(Core.camOk, Core.camResult)} · 센서권한 ${f(['granted','불필요'].includes(Core.permResult), Core.permResult)}` +
+    ` · 방향 ${f(Core.ori.count>0, Core.ori.count>0 ? Core.ori.count : '없음')} · 모션 ${f(Core.motCount>0, Core.motCount>0 ? Core.motCount : '없음')}` +
+    (cur && cur.needs.includes('mic') ? ` · 마이크 ${f(!!Core.micStream, Core.micResult)}` : '') +
+    (Core.view && Core.view.drag ? ' · <b>드래그 모드</b>' : '');
+}
+
+// ===================================================================
+// 별 배경
+// ===================================================================
+const sctx = stars.getContext('2d');
+const STARS = Array.from({ length: 260 }, () => ({ yaw: Math.random()*360, pitch: Math.asin(Math.random()*2-1)*180/Math.PI,
+  r: Math.random() < .08 ? 1.8 + Math.random() : .5 + Math.random()*1.1, a: .35 + Math.random()*.65, tw: Math.random()*6.28 }));
+let driftYaw = 0;
+function resize(){
+  Core.W = innerWidth; Core.H = innerHeight;
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  stars.width = Core.W * dpr; stars.height = Core.H * dpr; sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+addEventListener('resize', resize); resize();
+function drawStars(t, dt){
+  if (stars.hidden) return;
+  const W = Core.W, H = Core.H, hfov = VFOV * W / H;
+  let vy, vp;
+  if (Core.view) { vy = Core.view.yaw; vp = Core.view.pitch; } else { driftYaw += dt * 2; vy = driftYaw; vp = 0; }
+  sctx.clearRect(0, 0, W, H);
+  for (const s of STARS) {
+    const dy = wrap180(s.yaw - vy), dp = s.pitch - vp;
+    if (Math.abs(dy) > hfov*.6 || Math.abs(dp) > VFOV*.6) continue;
+    sctx.globalAlpha = s.a * (.7 + .3*Math.sin(t/600 + s.tw)); sctx.fillStyle = '#fff';
+    sctx.beginPath(); sctx.arc(W/2 + dy/hfov*W, H/2 - dp/VFOV*H, s.r, 0, 6.283); sctx.fill();
+  }
+  sctx.globalAlpha = 1;
+}
+
+// ===================================================================
+// HUD
+// ===================================================================
+function setProgress(n, total){
+  progressRow.hidden = false;
+  countEl.innerHTML = `${n} <small>/ ${total}</small>`;
+  barEl.style.width = clamp(n / total * 100, 0, 100) + '%';
+}
+function setGauge(p){ // 0~1 연속 진행
+  progressRow.hidden = false;
+  countEl.innerHTML = `${Math.floor(p*100)}<small>%</small>`;
+  barEl.style.width = clamp(p*100, 0, 100) + '%';
+}
+function showTip(text, warn){ if (!text) { tip.hidden = true; return; } tip.hidden = false; tipText.textContent = text; tipText.className = warn ? 'warn' : ''; }
+
+// ===================================================================
+// 미션 컨텍스트
+// ===================================================================
+function makeCtx(){
+  const cleanups = [];
+  const el = document.createElement('div'); el.className = 'layer'; stage.appendChild(el);
+  let finished = false;
+  const ctx = {
+    el,
+    onFrame(fn){ frameFns.add(fn); cleanups.push(() => frameFns.delete(fn)); },
+    onMotion(fn){ motionFns.add(fn); cleanups.push(() => motionFns.delete(fn)); },
+    listen(t, ev, fn, opt){ t.addEventListener(ev, fn, opt); cleanups.push(() => t.removeEventListener(ev, fn, opt)); },
+    later(fn, ms){ const id = setTimeout(fn, ms); cleanups.push(() => clearTimeout(id)); return id; },
+    every(fn, ms){ const id = setInterval(fn, ms); cleanups.push(() => clearInterval(id)); return id; },
+    addCleanup(fn){ cleanups.push(fn); },
+    progress: setProgress, gauge: setGauge, tip: showTip,
+    center(html){ const c = h(`<div class="center">${html}</div>`); el.appendChild(c); return c; },
+    done(){ if (finished) return; finished = true; finishMission(); },
+    get finished(){ return finished; },
+    cleanup(){ cleanups.splice(0).forEach(f => { try { f(); } catch(e){} }); el.remove(); arrowEl.hidden = true; Core.view = null; },
+  };
+  return ctx;
+}
+
+// AR 시점 (자이로, 안 되면 드래그)
+function arView(ctx){
+  const v = { yaw:0, pitch:0, base:0, drag:false, moved:0, startCount: Core.ori.count };
+  if (Core.ori.ok) { v.base = v.yaw = Core.ori.yaw; v.pitch = Core.ori.pitch; }
+  else { v.drag = true; v.pitch = 5; }
+  Core.view = v;
+  let d = null;
+  ctx.listen(ctx.el, 'pointerdown', e => { d = { x:e.clientX, y:e.clientY, id:e.pointerId }; v.moved = 0; });
+  ctx.listen(window, 'pointermove', e => {
+    if (!d || e.pointerId !== d.id) return;
+    const dx = e.clientX - d.x, dy = e.clientY - d.y; d.x = e.clientX; d.y = e.clientY;
+    v.moved += Math.abs(dx) + Math.abs(dy);
+    if (!v.drag) return;
+    v.yaw = norm360(v.yaw - dx * v.hfov() / Core.W);
+    v.pitch = clamp(v.pitch + dy * VFOV / Core.H, -70, 70);
+  });
+  ctx.listen(window, 'pointerup', e => { if (d && e.pointerId === d.id) d = null; });
+  v.hfov = () => VFOV * Core.W / Core.H;
+  v.update = () => {
+    if (v.drag && Core.ori.ok && Core.ori.count > v.startCount + 3) {      // 센서가 늦게 살아나면 전환
+      const rel = v.yaw - v.base; v.drag = false; v.base = norm360(Core.ori.yaw - rel); v.yaw = Core.ori.yaw; v.pitch = Core.ori.pitch;
+      ctx.onSwitch && ctx.onSwitch();
+    }
+    if (!v.drag) {
+      v.yaw = norm360(v.yaw + wrap180(Core.ori.yaw - v.yaw) * 0.22);
+      v.pitch += (Core.ori.pitch - v.pitch) * 0.22;
+    }
+  };
+  v.project = (yaw, pitch) => {
+    const hf = v.hfov(), dyaw = wrap180(yaw - v.yaw), dpitch = pitch - v.pitch;
+    const x = Core.W/2 + dyaw/hf*Core.W, y = Core.H/2 - dpitch/VFOV*Core.H;
+    return { x, y, dyaw, dpitch, vis: Math.abs(dyaw) < hf*.5 + 15 && Math.abs(dpitch) < VFOV*.5 + 15,
+             onScreen: x > 20 && x < Core.W - 20 && y > 110 && y < Core.H - 80 };
+  };
+  v.dragTip = '센서가 안 잡혀요 👆 화면을 손가락으로 끌어서 둘러보세요';
+  return v;
+}
+function pointArrow(target){ // target: {dyaw,dpitch} 또는 null
+  if (!target) { arrowEl.hidden = true; return; }
+  const v = Core.view, hf = v.hfov();
+  const ang = Math.atan2(-target.dpitch / VFOV * Core.H, target.dyaw / hf * Core.W);
+  const top = 130, bottom = 90, cx = Core.W/2, cy = (top + Core.H - bottom)/2;
+  const hw = Core.W/2 - 40, hh = (Core.H - bottom - top)/2 - 10;
+  const k = Math.min(hw / Math.abs(Math.cos(ang) || 1e-6), hh / Math.abs(Math.sin(ang) || 1e-6));
+  arrowEl.hidden = false;
+  arrowEl.style.transform = `translate3d(${(cx + Math.cos(ang)*k).toFixed(1)}px,${(cy + Math.sin(ang)*k).toFixed(1)}px,0) rotate(${ang}rad)`;
+}
+function popText(parent, x, y, text){
+  const p = h(`<div class="pop">${esc(text)}</div>`); p.style.left = x + 'px'; p.style.top = y + 'px';
+  parent.appendChild(p); setTimeout(() => p.remove(), 800);
+}
+// 꾹 누르기 대체 버튼
+function holdButton(label){
+  const b = h(`<button class="btn full" style="margin-top:14px">${esc(label)}</button>`);
+  b.holding = false;
+  const on = e => { e.preventDefault(); b.holding = true; b.style.transform = 'translateY(7px)'; b.style.boxShadow = '0 0 0 #000'; };
+  const off = () => { b.holding = false; b.style.transform = ''; b.style.boxShadow = ''; };
+  b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
+  return b;
+}
+
+// ===================================================================
+// 미션들
+// ===================================================================
+const MISSIONS = [];
+const M = m => MISSIONS.push(m);
+
+// ---------- 🧩 배선 연결 ----------
+M({ id:'wires', cat:'puzzle', icon:'🔌', name:'배선 연결', needs:[],
+  desc:'같은 색 전선끼리 왼쪽에서 오른쪽으로 끌어서 이어 주세요.',
+  start(ctx){
+    const COLORS = [['#ff5c7a','●'],['#4da3ff','▲'],['#ffd43b','■'],['#ff7ad9','◆']];
+    const c = ctx.center(`<div class="panel"><div class="lcd">전선 4개를 이으세요</div><div class="wires"><svg></svg></div></div>`);
+    const box = c.querySelector('.wires'), svg = c.querySelector('svg'), lcd = c.querySelector('.lcd');
+    const ys = [0.12, 0.37, 0.63, 0.88];
+    const rightOrder = shuffle([0,1,2,3]);
+    const L = [], R = [];
+    COLORS.forEach(([col, sym], i) => {
+      const l = h(`<div class="node l" style="background:${col};top:${ys[i]*100}%">${sym}</div>`); box.appendChild(l); L.push({ el:l, i, done:false });
+      const ri = rightOrder[i];
+      const r = h(`<div class="node r" style="background:${COLORS[ri][0]};top:${ys[i]*100}%">${COLORS[ri][1]}</div>`); box.appendChild(r); R.push({ el:r, i:ri });
+    });
+    let got = 0; ctx.progress(0, 4);
+    const NS = 'http://www.w3.org/2000/svg';
+    const pt = (el, side) => { const b = box.getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: (side==='l' ? r.right : r.left) - b.left, y: r.top + r.height/2 - b.top }; };
+    const line = (col) => { const p = document.createElementNS(NS, 'line'); p.setAttribute('stroke', col); p.setAttribute('stroke-width', '12'); p.setAttribute('stroke-linecap', 'round'); svg.appendChild(p); return p; };
+    let act = null;
+    ctx.listen(box, 'pointerdown', e => {
+      const b = box.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top;
+      const hit = L.find(n => !n.done && Math.hypot(pt(n.el,'l').x - 20 - x, pt(n.el,'l').y - y) < 40);
+      if (!hit) return;
+      const s = pt(hit.el, 'l'), ln = line(COLORS[hit.i][0]);
+      ln.setAttribute('x1', s.x); ln.setAttribute('y1', s.y); ln.setAttribute('x2', x); ln.setAttribute('y2', y);
+      act = { n: hit, ln, id: e.pointerId }; sfx.click();
+    });
+    ctx.listen(window, 'pointermove', e => {
+      if (!act || e.pointerId !== act.id) return;
+      const b = box.getBoundingClientRect(); act.ln.setAttribute('x2', e.clientX - b.left); act.ln.setAttribute('y2', e.clientY - b.top);
+    });
+    ctx.listen(window, 'pointerup', e => {
+      if (!act || e.pointerId !== act.id) return;
+      const b = box.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top;
+      const tgt = R.find(r => { const p = pt(r.el, 'r'); return Math.hypot(p.x + 20 - x, p.y - y) < 44; });
+      if (tgt && tgt.i === act.n.i) {
+        const p = pt(tgt.el, 'r'); act.ln.setAttribute('x2', p.x); act.ln.setAttribute('y2', p.y);
+        act.n.done = true; act.n.el.classList.add('on'); tgt.el.classList.add('on');
+        got++; sfx.ok(got); ctx.progress(got, 4); lcd.textContent = got < 4 ? `연결됨 ${got} / 4` : '전력 복구 완료!';
+        if (got === 4) ctx.later(() => ctx.done(), 600);
+      } else {
+        act.ln.remove(); if (tgt) { sfx.wrong(); lcd.textContent = '색이 달라요!'; lcd.classList.add('err'); ctx.later(() => lcd.classList.remove('err'), 700); }
+      }
+      act = null;
+    });
+    ctx.tip('같은 색·같은 모양끼리 연결');
+  }
+});
+
+// ---------- 🧩 숫자 순서 ----------
+M({ id:'numbers', cat:'puzzle', icon:'🔢', name:'숫자 순서', needs:[],
+  desc:'1부터 10까지 순서대로 눌러 주세요. 틀리면 처음부터예요.',
+  start(ctx){
+    const c = ctx.center(`<div class="panel"><div class="lcd">1부터 누르세요</div><div class="grid" style="grid-template-columns:repeat(3,1fr)"></div></div>`);
+    const grid = c.querySelector('.grid'), lcd = c.querySelector('.lcd');
+    const cells = shuffle([1,2,3,4,5,6,7,8,9,10,0,0]);
+    let next = 1; const tiles = [];
+    cells.forEach(n => {
+      const t = h(`<button class="tile ${n ? '' : 'blank'}">${n || ''}</button>`); grid.appendChild(t);
+      if (!n) return; tiles.push(t);
+      t.addEventListener('click', () => {
+        if (t.classList.contains('ok')) return;
+        if (n === next) {
+          t.classList.add('ok'); sfx.ok(n % 6); ctx.progress(n, 10); next++;
+          lcd.textContent = next > 10 ? '잠금 해제!' : `다음: ${next}`; lcd.classList.remove('err');
+          if (next > 10) ctx.later(() => ctx.done(), 500);
+        } else {
+          sfx.wrong(); bump(grid); lcd.textContent = '틀렸어요! 처음부터'; lcd.classList.add('err');
+          tiles.forEach(x => x.classList.remove('ok')); next = 1; ctx.progress(0, 10);
+        }
+      });
+    });
+    ctx.progress(0, 10);
+    ctx.tip('1 → 10 순서대로');
+  }
+});
+
+// ---------- 🧩 패턴 기억 ----------
+M({ id:'pattern', cat:'puzzle', icon:'💡', name:'패턴 기억', needs:[],
+  desc:'불이 켜지는 순서를 잘 보고 똑같이 눌러 주세요. 5단계까지 있어요.',
+  start(ctx){
+    const ROUNDS = 5;
+    const c = ctx.center(`<div class="panel"><div class="dots">${'<i></i>'.repeat(ROUNDS)}</div><div class="lcd">잘 보세요…</div><div class="grid" style="grid-template-columns:repeat(3,1fr)"></div></div>`);
+    const grid = c.querySelector('.grid'), lcd = c.querySelector('.lcd'), dots = c.querySelectorAll('.dots i');
+    const pads = Array.from({ length: 9 }, (_, i) => { const p = h(`<button class="pad lock"></button>`); grid.appendChild(p); return p; });
+    const seq = Array.from({ length: ROUNDS }, () => Math.floor(Math.random() * 9));
+    let round = 1, input = 0, playing = false;
+    const lockAll = on => pads.forEach(p => p.classList.toggle('lock', on));
+    const flash = (i, ms=380) => { pads[i].classList.add('lit'); sfx.pad(i); ctx.later(() => pads[i].classList.remove('lit'), ms); };
+    function play(){
+      playing = true; lockAll(true); input = 0; lcd.textContent = '잘 보세요…'; lcd.classList.remove('err');
+      for (let k = 0; k < round; k++) ctx.later(() => flash(seq[k]), 700 + k * 600);
+      ctx.later(() => { playing = false; lockAll(false); lcd.textContent = '따라 누르세요'; }, 700 + round * 600);
+    }
+    pads.forEach((p, i) => p.addEventListener('pointerdown', () => {
+      if (playing) return;
+      flash(i, 220);
+      if (i !== seq[input]) { sfx.wrong(); bump(grid); lcd.textContent = '틀렸어요! 다시 보여줄게요'; lcd.classList.add('err'); lockAll(true); playing = true; ctx.later(play, 1000); return; }
+      input++;
+      if (input === round) {
+        dots[round-1].classList.add('on'); ctx.progress(round, ROUNDS);
+        if (round === ROUNDS) { lockAll(true); lcd.textContent = '시스템 정상!'; ctx.later(() => ctx.done(), 700); return; }
+        round++; lockAll(true); playing = true; ctx.later(play, 700);
+      }
+    }));
+    ctx.progress(0, ROUNDS); ctx.tip('소리도 같이 들어 보세요');
+    play();
+  }
+});
+
+// ---------- 🧩 카드 긁기 ----------
+M({ id:'card', cat:'puzzle', icon:'💳', name:'카드 긁기', needs:[],
+  desc:'카드를 끝까지 긁어 주세요. 너무 빠르거나 느리면 다시 해야 해요.',
+  start(ctx){
+    const c = ctx.center(`<div class="panel"><div class="lcd">카드를 오른쪽으로 긁으세요</div>
+      <div class="slot"><div class="card"><b>말랑 우주선</b><div class="chip"></div><small>CREW ID · 0427</small></div></div>
+      <div class="label">한 번에 적당한 속도로 쭉~</div></div>`);
+    const slot = c.querySelector('.slot'), card = c.querySelector('.card'), lcd = c.querySelector('.lcd');
+    let drag = null, ok = false;
+    const maxX = () => slot.clientWidth - card.offsetWidth - 16;
+    const setX = x => card.style.transform = `translateX(${x}px)`;
+    const msg = (t, err) => { lcd.textContent = t; lcd.classList.toggle('err', !!err); };
+    card.addEventListener('pointerdown', e => {
+      if (ok) return; card.setPointerCapture(e.pointerId); card.style.transition = 'none';
+      drag = { sx: e.clientX, t0: 0 }; msg('긁는 중…');
+    });
+    card.addEventListener('pointermove', e => {
+      if (!drag) return;
+      const x = clamp(e.clientX - drag.sx, 0, maxX()); setX(x);
+      if (x > 6 && !drag.t0) drag.t0 = performance.now();
+      if (x >= maxX() * 0.97) {
+        const dt = (performance.now() - drag.t0) / 1000; drag = null;
+        if (dt < 0.35) { sfx.wrong(); msg('너무 빨라요. 다시 긁어 주세요', true); back(); }
+        else if (dt > 1.3) { sfx.wrong(); msg('너무 느려요. 다시 긁어 주세요', true); back(); }
+        else { ok = true; sfx.ok(3); msg(`승인됨 ✔ (${dt.toFixed(2)}초)`); ctx.progress(1, 1); ctx.later(() => ctx.done(), 700); }
+      }
+    });
+    const up = () => { if (!drag) return; drag = null; sfx.wrong(); msg('끝까지 긁어 주세요', true); back(); };
+    card.addEventListener('pointerup', up); card.addEventListener('pointercancel', up);
+    function back(){ card.style.transition = 'transform .25s'; setX(0); }
+    ctx.progress(0, 1); ctx.tip('적당한 속도: 약 0.4 ~ 1.3초');
+  }
+});
+
+// ---------- 📱 엔진 시동 (흔들기) ----------
+M({ id:'shake', cat:'action', icon:'🫨', name:'엔진 시동', needs:['motion'],
+  desc:'폰을 꽉 쥐고 마구 흔들어서 엔진 게이지를 가득 채우세요.',
+  start(ctx){
+    const c = ctx.center(`<div class="panel"><div class="lcd">흔들어서 시동!</div><div class="engine">🚀</div>
+      <div class="gauge" style="margin-top:10px"><i></i></div><div class="meter"><i></i></div><div class="label">아래 얇은 줄 = 지금 흔드는 세기</div><div class="alt"></div></div>`);
+    const eng = c.querySelector('.engine'), g = c.querySelector('.gauge i'), meter = c.querySelector('.meter i'), lcd = c.querySelector('.lcd'), alt = c.querySelector('.alt');
+    let p = 0, inten = 0, lastBuzz = 0;
+    ctx.onMotion((d, iv) => {
+      const k = iv / 16;
+      inten = Math.max(inten * 0.9, d);
+      if (d > 3) p += Math.min(d - 3, 30) * 0.0006 * k;
+    });
+    let fallback = null;
+    ctx.later(() => {
+      if (Core.motCount > 0) return;
+      fallback = holdButton('흔들기 대신: 연타!'); alt.appendChild(fallback);
+      fallback.addEventListener('pointerdown', () => { p += 0.035; inten = 25; });
+      ctx.tip('모션 센서가 안 잡혀요. 버튼을 연타하세요', true);
+    }, 2000);
+    ctx.onFrame((t, dt) => {
+      p = clamp(p - dt * 0.04, 0, 1);
+      inten *= Math.pow(0.05, dt);
+      g.style.width = (p * 100) + '%'; meter.style.width = clamp(inten / 30 * 100, 0, 100) + '%';
+      const s = clamp(inten / 4, 0, 8);
+      eng.style.transform = `translate(${rand(-s,s)}px,${rand(-s,s)}px) rotate(${rand(-s,s)/2}deg)`;
+      ctx.gauge(p);
+      if (inten > 6 && t - lastBuzz > 120) { lastBuzz = t; tone(60 + p * 200, 0, .1, 'sawtooth', .04); }
+      if (p >= 1) { lcd.textContent = '시동 완료! 🔥'; ctx.done(); }
+    });
+    ctx.tip('세게 흔들수록 빨리 차요. 멈추면 조금씩 줄어요');
+  }
+});
+
+// ---------- 📱 기울기 미로 ----------
+M({ id:'maze', cat:'action', icon:'🎱', name:'기울기 미로', needs:['motion'],
+  desc:'폰을 기울여서 공을 굴려 초록 출구까지 보내세요.',
+  start(ctx){
+    const CW = 5, CH = 7, TW = CW*2+1, TH = CH*2+1;
+    const grid = Array.from({ length: TH }, () => Array(TW).fill(1));
+    (function carve(){ const st = [[0,0]], seen = new Set(['0,0']); grid[1][1] = 0;
+      while (st.length) { const [x,y] = st[st.length-1];
+        const nb = shuffle([[1,0],[-1,0],[0,1],[0,-1]]).map(([dx,dy]) => [x+dx,y+dy]).filter(([a,b]) => a>=0&&b>=0&&a<CW&&b<CH&&!seen.has(a+','+b));
+        if (!nb.length) { st.pop(); continue; }
+        const [nx,ny] = nb[0]; seen.add(nx+','+ny); grid[ny*2+1][nx*2+1] = 0; grid[y+ny+1][x+nx+1] = 0; st.push([nx,ny]); } })();
+    const gx = TW-2, gy = TH-2;
+    const c = ctx.center(`<div><canvas class="maze"></canvas><div class="label" id="mzl">편한 자세로 들고 잠깐만요…</div></div>`);
+    const cv = c.querySelector('canvas'), lab = c.querySelector('#mzl'), g = cv.getContext('2d');
+    const availW = Core.W - 40, availH = Core.H - 112 - 110 - 40;
+    const T = Math.floor(Math.min(availW / TW, availH / TH));
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    cv.width = TW*T*dpr; cv.height = TH*T*dpr; cv.style.width = TW*T + 'px'; cv.style.height = TH*T + 'px'; g.setTransform(dpr,0,0,dpr,0,0);
+    const ball = { x:1.5, y:1.5, vx:0, vy:0 }, HB = 0.3;
+    let base = null, mode = 'wait', vt = { x:0, y:0 }, won = false;
+    ctx.later(() => {
+      if (Core.ori.ok) { base = Core.ori.beta; mode = 'tilt'; lab.textContent = '기울여서 굴리세요!'; }
+      else { mode = 'drag'; lab.textContent = '센서가 안 잡혀요: 화면을 끌어서 기울이세요'; ctx.tip('손가락을 대고 끄는 방향으로 기울어져요', true); }
+    }, 1200);
+    let dd = null;
+    ctx.listen(ctx.el, 'pointerdown', e => { dd = { x:e.clientX, y:e.clientY, id:e.pointerId }; });
+    ctx.listen(window, 'pointermove', e => { if (dd && e.pointerId === dd.id) vt = { x: clamp((e.clientX - dd.x)/60*25, -30, 30), y: clamp((e.clientY - dd.y)/60*25, -30, 30) }; });
+    ctx.listen(window, 'pointerup', e => { if (dd && e.pointerId === dd.id) { dd = null; vt = { x:0, y:0 }; } });
+    const solid = (x, y) => { for (let ty = Math.floor(y-HB); ty <= Math.floor(y+HB-1e-6); ty++) for (let tx = Math.floor(x-HB); tx <= Math.floor(x+HB-1e-6); tx++) if (!grid[ty] || grid[ty][tx] !== 0) return true; return false; };
+    function draw(t){
+      g.fillStyle = '#0b1230'; g.fillRect(0, 0, TW*T, TH*T);
+      for (let y = 0; y < TH; y++) for (let x = 0; x < TW; x++) if (grid[y][x]) { g.fillStyle = '#2b3a7a'; g.fillRect(x*T, y*T, T, T); g.fillStyle = '#3d52a8'; g.fillRect(x*T, y*T, T, Math.max(2, T*.18)); }
+      g.fillStyle = `rgba(92,255,176,${.55 + .35*Math.sin(t/200)})`; g.fillRect(gx*T+2, gy*T+2, T-4, T-4);
+      g.font = `${T*.7}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('🏁', gx*T+T/2, gy*T+T/2+1);
+      g.beginPath(); g.arc(ball.x*T, ball.y*T, T*HB*1.15, 0, 6.283); g.fillStyle = '#ffd43b'; g.fill(); g.lineWidth = 3; g.strokeStyle = '#000'; g.stroke();
+    }
+    ctx.progress(0, 1);
+    ctx.onFrame((t, dt) => {
+      dt = Math.min(dt, 0.05);
+      let tx = 0, ty = 0;
+      if (mode === 'tilt') { tx = Core.ori.gamma; ty = Core.ori.beta - base; }
+      else if (mode === 'drag') { tx = vt.x; ty = vt.y; }
+      const A = 22;
+      ball.vx += clamp(tx, -30, 30) / 30 * A * dt; ball.vy += clamp(ty, -30, 30) / 30 * A * dt;
+      const f = Math.pow(0.25, dt); ball.vx *= f; ball.vy *= f;
+      ball.vx = clamp(ball.vx, -7, 7); ball.vy = clamp(ball.vy, -7, 7);
+      const steps = Math.ceil(Math.max(Math.abs(ball.vx), Math.abs(ball.vy)) * dt / 0.15) || 1;
+      for (let i = 0; i < steps; i++) {
+        const nx = ball.x + ball.vx * dt / steps; if (solid(nx, ball.y)) ball.vx *= -0.25; else ball.x = nx;
+        const ny = ball.y + ball.vy * dt / steps; if (solid(ball.x, ny)) ball.vy *= -0.25; else ball.y = ny;
+      }
+      draw(t);
+      if (!won && Math.floor(ball.x) === gx && Math.floor(ball.y) === gy) { won = true; sfx.ok(4); ctx.progress(1, 1); lab.textContent = '탈출 성공!'; ctx.later(() => ctx.done(), 500); }
+    });
+    ctx.tip('바닥과 평평하게 들면 더 쉬워요');
+  }
+});
+
+// ---------- 📱 의료 스캔 (가만히) ----------
+M({ id:'scan', cat:'action', icon:'🩺', name:'의료 스캔', needs:['motion'],
+  desc:'손바닥 버튼에 손가락을 대고 10초 동안 가만히 있어 주세요. 움직이면 처음부터!',
+  start(ctx){
+    const DUR = 10;
+    const c = ctx.center(`<div class="panel"><div class="scanbody"><div class="who">🧍</div><div class="bar"></div></div>
+      <div class="readout"></div><div class="hand">🖐️</div><div class="label">손가락을 대고 있는 동안 스캔해요</div></div>`);
+    const body = c.querySelector('.scanbody'), hand = c.querySelector('.hand'), ro = c.querySelector('.readout');
+    const LINES = ['ID: 말랑 크루원', '키: 측정 완료', '혈액형: 우주형', '심박: 정상', '결과: 이상 없음 ✔'];
+    let held = false, p = 0, lastWarn = 0, finishing = false;
+    const on = e => { e.preventDefault(); held = true; hand.classList.add('on'); body.classList.add('run'); };
+    const off = () => { if (held && p < 1) { if (p > 0.05) { sfx.wrong(); ctx.tip('손을 떼서 처음부터예요', true); } p = 0; } held = false; hand.classList.remove('on'); body.classList.remove('run'); };
+    ctx.listen(hand, 'pointerdown', on); ctx.listen(window, 'pointerup', off); ctx.listen(window, 'pointercancel', off);
+    ctx.onMotion(d => {
+      if (!held || p >= 1) return;
+      if (d > 3.2) { p = 0; const n = performance.now(); if (n - lastWarn > 800) { lastWarn = n; sfx.wrong(); bump(body); ctx.tip('움직였어요! 처음부터 다시', true); } }
+    });
+    let lastSec = -1;
+    ctx.onFrame((t, dt) => {
+      if (held && p < 1) {
+        p = Math.min(1, p + dt / DUR);
+        const s = Math.floor(p * DUR); if (s !== lastSec) { lastSec = s; tone(1200, 0, .04, 'sine', .05); }
+      }
+      ctx.gauge(p);
+      ro.innerHTML = LINES.slice(0, Math.floor(p * LINES.length + 0.001)).map(esc).join('<br>');
+      if (p >= 1 && !finishing) { finishing = true; hand.classList.remove('on'); body.classList.remove('run'); sfx.ok(4); ctx.later(() => ctx.done(), 600); }
+    });
+    ctx.tip(Core.motCount ? '폰을 들고 손가락을 댄 채 가만히' : '손가락을 댄 채로 10초 기다리세요');
+  }
+});
+
+// ---------- 📱 산소 공급 (마이크) ----------
+M({ id:'blow', cat:'action', icon:'🌬️', name:'산소 공급', needs:['mic'],
+  desc:'마이크(폰 아래쪽)에 "후~" 하고 바람을 불어서 산소 탱크를 채우세요.',
+  start(ctx){
+    const c = ctx.center(`<div class="panel"><div class="lcd">마이크에 후~ 불어요</div><div class="tank"><i></i><b>0%</b></div>
+      <div class="meter"><i></i></div><div class="label">얇은 줄 = 지금 들리는 소리 크기</div><div class="alt"></div></div>`);
+    const fill = c.querySelector('.tank i'), pct = c.querySelector('.tank b'), meter = c.querySelector('.meter i'), alt = c.querySelector('.alt'), lcd = c.querySelector('.lcd');
+    let p = 0, level = 0, an = null, buf = null, src = null, hb = null;
+    if (Core.micStream && actx) {
+      try {
+        src = actx.createMediaStreamSource(Core.micStream); an = actx.createAnalyser(); an.fftSize = 1024; src.connect(an);
+        buf = new Float32Array(an.fftSize); ctx.addCleanup(() => { try { src.disconnect(); } catch(e){} });
+      } catch(e) { an = null; }
+    }
+    if (!an) {
+      hb = holdButton('마이크 대신: 꾹 누르기'); alt.appendChild(hb);
+      ctx.tip(`마이크를 못 써요 (${Core.micResult}). 버튼을 꾹 누르세요`, true);
+    } else ctx.tip('입을 마이크 가까이 대고 길게 후~');
+    ctx.onFrame((t, dt) => {
+      let blowing = false;
+      if (an) {
+        an.getFloatTimeDomainData(buf); let s = 0; for (let i = 0; i < buf.length; i++) s += buf[i]*buf[i];
+        const rms = Math.sqrt(s / buf.length); level = Math.max(level * 0.85, rms);
+        meter.style.width = clamp(level / 0.3 * 100, 0, 100) + '%';
+        blowing = level > 0.08;
+      } else blowing = hb && hb.holding;
+      p = clamp(p + (blowing ? dt / 3.5 : -dt * 0.03), 0, 1);
+      fill.style.height = (p*100) + '%'; pct.textContent = Math.floor(p*100) + '%'; ctx.gauge(p);
+      if (p >= 1) { lcd.textContent = '산소 충전 완료!'; ctx.done(); }
+    });
+  }
+});
+
+// ---------- 📱 한 바퀴 ----------
+M({ id:'spin', cat:'action', icon:'🔄', name:'한 바퀴 돌기', needs:['motion'],
+  desc:'폰을 앞으로 들고 제자리에서 몸을 한 바퀴 빙~ 돌아 주세요. (안테나 보정)',
+  start(ctx){
+    const c = ctx.center(`<div class="panel"><div class="lcd">한 바퀴 돌아 주세요</div><div class="ringwrap"><div class="needle">📡</div><div class="pct">0°</div></div></div>`);
+    const ring = c.querySelector('.ringwrap'), needle = c.querySelector('.needle'), pct = c.querySelector('.pct'), lcd = c.querySelector('.lcd');
+    let total = 0, last = null, drag = false, dd = null;
+    ctx.later(() => { if (!Core.ori.ok) { drag = true; ctx.tip('센서가 안 잡혀요: 화면을 옆으로 끌어서 돌리세요', true); } }, 1500);
+    ctx.listen(ctx.el, 'pointerdown', e => { dd = { x:e.clientX, id:e.pointerId }; });
+    ctx.listen(window, 'pointermove', e => { if (drag && dd && e.pointerId === dd.id) { total += (e.clientX - dd.x) * 0.6; dd.x = e.clientX; } });
+    ctx.listen(window, 'pointerup', () => { dd = null; });
+    let lastStep = 0;
+    ctx.onFrame(() => {
+      if (!drag && Core.ori.ok) { if (last != null) total += wrap180(Core.ori.yaw - last); last = Core.ori.yaw; }
+      const a = Math.min(Math.abs(total), 360);
+      ring.style.setProperty('--p', a / 3.6); pct.textContent = Math.floor(a) + '°'; needle.style.transform = `rotate(${total}deg)`;
+      ctx.gauge(a / 360);
+      const step = Math.floor(a / 45); if (step > lastStep) { lastStep = step; tone(500 + step * 80, 0, .08, 'triangle', .1); }
+      if (a >= 360) { lcd.textContent = '보정 완료!'; ctx.done(); }
+    });
+    ctx.tip('어느 방향이든 한 바퀴');
+  }
+});
+
+// ---------- 🛰️ 우주 쓰레기 줍기 ----------
+M({ id:'junk', cat:'ar', icon:'🛰️', name:'우주 쓰레기 줍기', needs:['cam','motion'], ar:true,
+  desc:'폰을 들고 주위를 둘러보며 떠다니는 쓰레기 5개를 터치해 주우세요.',
+  start(ctx){
+    const v = arView(ctx), N = 5, EM = shuffle(['🛰️','🔩','🥫','⚙️','🪫','📡']).slice(0, N);
+    const junks = []; let got = 0;
+    for (let i = 0; i < N; i++) {
+      const el = h(`<div class="junk"><div class="float" style="animation-delay:${(-Math.random()*2.6).toFixed(2)}s"><div class="glow"></div>
+        <div class="ring" style="animation-duration:${(5+Math.random()*3).toFixed(1)}s"></div><div class="emo">${EM[i]}</div></div></div>`);
+      const j = { el, off: i*72 + rand(-20,20), pitch: rand(-15,25), got:false, x:0, y:0 };
+      el.addEventListener('pointerup', () => {
+        if (v.moved > 14 || j.got) return;
+        j.got = true; got++; sfx.ok(got); el.classList.add('got'); popText(ctx.el, j.x, j.y - 30, '+1');
+        setTimeout(() => el.remove(), 600); ctx.progress(got, N);
+        if (got === N) ctx.later(() => ctx.done(), 700);
+      });
+      ctx.el.appendChild(el); junks.push(j);
+    }
+    ctx.progress(0, N);
+    const tipNow = () => ctx.tip(v.drag ? v.dragTip + ', 쓰레기를 터치!' : '몸을 돌려 둘러보세요. 노란 쓰레기를 터치!', v.drag);
+    ctx.onSwitch = tipNow; tipNow();
+    ctx.onFrame(() => {
+      v.update();
+      let nearest = null, nd = Infinity, any = false;
+      for (const j of junks) {
+        if (j.got) continue;
+        const p = v.project(v.base + j.off, j.pitch); j.x = p.x; j.y = p.y;
+        j.el.style.transform = p.vis ? `translate3d(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px,0)` : 'translate3d(-9999px,0,0)';
+        if (p.onScreen) any = true; else { const d = Math.hypot(p.dyaw, p.dpitch); if (d < nd) { nd = d; nearest = p; } }
+      }
+      pointArrow(any ? null : nearest);
+    });
+  }
+});
+
+// ---------- 🛰️ 소행성 파괴 ----------
+M({ id:'asteroids', cat:'ar', icon:'☄️', name:'소행성 파괴', needs:['cam','motion'], ar:true,
+  desc:'폰을 움직여 가운데 조준점을 소행성에 맞추고 화면을 탭해서 쏘세요. 15개 파괴!',
+  start(ctx){
+    const v = arView(ctx), N = 15, ALIVE = 3;
+    let hit = 0; const rocks = [];
+    const cross = h(`<div class="cross"><i></i></div>`); ctx.el.appendChild(cross);
+    function spawn(){
+      const el = h(`<div class="rock"><div class="emo">${Math.random() < .5 ? '☄️' : '🪨'}</div></div>`); ctx.el.appendChild(el);
+      const r = { el, yaw: v.yaw + rand(-55, 55), pitch: rand(-12, 28), vy: rand(5, 13) * (Math.random() < .5 ? -1 : 1), vp: rand(-3, 3), dead:false, x:0, y:0 };
+      rocks.push(r);
+    }
+    for (let i = 0; i < ALIVE; i++) spawn();
+    ctx.progress(0, N);
+    const tipNow = () => ctx.tip(v.drag ? v.dragTip + ', 탭해서 발사!' : '조준점(가운데)을 맞추고 아무 데나 탭!', v.drag);
+    ctx.onSwitch = tipNow; tipNow();
+    ctx.listen(ctx.el, 'pointerup', () => {
+      if (v.moved > 14 || hit >= N) return;
+      sfx.shoot();
+      const L = h(`<div class="laser" style="height:${Core.H/2}px"></div>`); ctx.el.appendChild(L); setTimeout(() => L.remove(), 200);
+      let best = null, bd = 62;
+      for (const r of rocks) { if (r.dead) continue; const d = Math.hypot(r.x - Core.W/2, r.y - Core.H/2); if (d < bd) { bd = d; best = r; } }
+      if (!best) return;
+      best.dead = true; best.el.classList.add('boom'); sfx.boom(); popText(ctx.el, best.x, best.y - 30, '💥');
+      setTimeout(() => best.el.remove(), 500);
+      hit++; ctx.progress(hit, N);
+      if (hit >= N) { ctx.later(() => ctx.done(), 700); return; }
+      const aliveNeeded = Math.min(ALIVE, N - hit);
+      if (rocks.filter(r => !r.dead).length < aliveNeeded) ctx.later(spawn, 400);
+    });
+    ctx.onFrame((t, dt) => {
+      v.update();
+      let nearest = null, nd = Infinity, any = false, hot = false;
+      for (const r of rocks) {
+        if (r.dead) continue;
+        r.yaw = norm360(r.yaw + r.vy * dt); r.pitch += r.vp * dt;
+        if (r.pitch > 35 || r.pitch < -20) r.vp *= -1;
+        if (Math.abs(wrap180(r.yaw - v.yaw)) > 85) { r.dead = true; r.el.remove(); spawn(); continue; }   // 너무 멀어지면 다시 등장
+        const p = v.project(r.yaw, r.pitch); r.x = p.x; r.y = p.y;
+        r.el.style.transform = p.vis ? `translate3d(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px,0)` : 'translate3d(-9999px,0,0)';
+        if (p.onScreen) any = true; else { const d = Math.hypot(p.dyaw, p.dpitch); if (d < nd) { nd = d; nearest = p; } }
+        if (Math.hypot(p.x - Core.W/2, p.y - Core.H/2) < 62) hot = true;
+      }
+      cross.classList.toggle('hot', hot);
+      pointArrow(any ? null : nearest);
+    });
+  }
+});
+
+// ---------- 👥 암호 전달 (2인) ----------
+M({ id:'code', cat:'duo', icon:'🗝️', name:'암호 전달', needs:[], duo:true,
+  desc:'2인 미션! 두 사람이 각자 폰으로 같은 방 QR을 찍어요. 전달자는 화면을 보여주지 말고 말로만 기호를 설명하고, 입력자가 맞히면 성공.',
+  start(ctx){
+    const SY = ['🔺','⬛','⚪','⭐','🌙','❤️','⚡','💧','🍀'];
+    const roomHash = [...(room || 'x')].reduce((a, ch) => a * 31 + ch.charCodeAt(0) | 0, 7);
+    function pick4(r){ const a = SY.slice(); for (let i = a.length-1; i > 0; i--) { const k = Math.floor(r()*(i+1)); [a[i],a[k]] = [a[k],a[i]]; } return a.slice(0, 4); }
+    const ansOf = set => pick4(seeded(set * 7919 + roomHash));
+    const confirmOf = set => String((set * 37 + 11 + Math.abs(roomHash) % 97) % 900 + 100);
+    const box = ctx.center(`<div class="panel"></div>`).firstElementChild;
+    ctx.progress(0, 2);
+    function digitPad(len, onDone, title){
+      box.innerHTML = `<div class="lcd">${title}</div><div class="slots">${'<span></span>'.repeat(len)}</div>
+        <div class="grid" style="grid-template-columns:repeat(3,1fr)">${[1,2,3,4,5,6,7,8,9,'⌫',0,'✔'].map(k => `<button class="key" data-k="${k}">${k}</button>`).join('')}</div>`;
+      const slots = box.querySelectorAll('.slots span'), lcd = box.querySelector('.lcd'); let s = '';
+      box.querySelectorAll('.key').forEach(b => b.addEventListener('click', () => {
+        const k = b.dataset.k; sfx.click();
+        if (k === '⌫') s = s.slice(0, -1); else if (k === '✔') { if (s.length === len) { if (!onDone(s, lcd)) { s = ''; } } }
+        else if (s.length < len) s += k;
+        slots.forEach((el, i) => el.textContent = s[i] || '');
+      }));
+    }
+    function chooseRole(){
+      box.innerHTML = `<div class="lcd">역할을 고르세요</div>
+        <button class="btn full" id="rS">📢 전달자<br><small style="font-family:var(--body);font-size:15px">기호를 보고 말로 설명</small></button>
+        <div style="height:16px"></div>
+        <button class="btn full" id="rR" style="background:var(--hud)">⌨️ 입력자<br><small style="font-family:var(--body);font-size:15px">듣고 기호를 입력</small></button>`;
+      box.querySelector('#rS').onclick = () => { sfx.click(); sender(); };
+      box.querySelector('#rR').onclick = () => { sfx.click(); receiver(); };
+      ctx.tip('두 사람이 서로 다른 역할을 고르세요');
+    }
+    function sender(){
+      const set = 10 + Math.floor(Math.random() * 90), ans = ansOf(set);
+      box.innerHTML = `<div class="lcd">입력자에게 세트 번호를 불러 주세요</div><div class="codeshow">${set}</div>
+        <div class="label" style="margin:0 0 4px">아래 기호를 순서대로 말로만 설명! (화면 보여주기 금지)</div>
+        <div class="syms">${ans.map(s => `<span>${s}</span>`).join('')}</div>
+        <button class="btn full" id="toConfirm" style="margin-top:10px">입력자가 맞혔어요 → 확인 코드 입력</button>`;
+      ctx.progress(1, 2); ctx.tip('예: "첫 번째는 빨간 세모"');
+      box.querySelector('#toConfirm').onclick = () => {
+        sfx.click();
+        digitPad(3, (s, lcd) => {
+          if (s === confirmOf(set)) { sfx.ok(4); lcd.textContent = '통신 성공!'; ctx.progress(2, 2); ctx.later(() => ctx.done(), 500); return true; }
+          sfx.wrong(); lcd.textContent = '확인 코드가 달라요'; lcd.classList.add('err'); return false;
+        }, '입력자 화면의 확인 코드 3자리');
+      };
+    }
+    function receiver(){
+      digitPad(2, (s) => { symbolInput(parseInt(s, 10)); return true; }, '전달자가 부른 세트 번호');
+      ctx.tip('전달자에게 세트 번호를 물어보세요');
+    }
+    function symbolInput(set){
+      const ans = ansOf(set), kr = seeded(set + 101), keys = SY.slice();
+      for (let i = keys.length-1; i > 0; i--) { const k = Math.floor(kr()*(i+1)); [keys[i],keys[k]] = [keys[k],keys[i]]; }
+      let cur = [];
+      box.innerHTML = `<div class="lcd">세트 ${set} · 설명을 듣고 순서대로</div><div class="slots">${'<span></span>'.repeat(4)}</div>
+        <div class="grid" style="grid-template-columns:repeat(3,1fr)">${keys.map(k => `<button class="key sym" data-k="${k}">${k}</button>`).join('')}</div>
+        <div class="row"><button class="btn ghost" id="clr">지우기</button></div>`;
+      const slots = box.querySelectorAll('.slots span'), lcd = box.querySelector('.lcd');
+      const render = () => slots.forEach((el, i) => el.textContent = cur[i] || '');
+      box.querySelector('#clr').onclick = () => { cur = []; render(); };
+      box.querySelectorAll('.key').forEach(b => b.addEventListener('click', () => {
+        if (cur.length >= 4) return; sfx.click(); cur.push(b.dataset.k); render();
+        if (cur.length === 4) {
+          if (cur.join('') === ans.join('')) {
+            sfx.ok(4); ctx.progress(1, 2);
+            box.innerHTML = `<div class="lcd">정답! 전달자에게 이 코드를 불러 주세요</div><div class="codeshow">${confirmOf(set)}</div>
+              <button class="btn full" id="fin" style="margin-top:14px">불러 줬어요 → 완료</button>`;
+            box.querySelector('#fin').onclick = () => { ctx.progress(2, 2); ctx.done(); };
+          } else {
+            sfx.wrong(); bump(box); lcd.textContent = '틀렸어요! 다시 들어 보세요'; lcd.classList.add('err');
+            setTimeout(() => { cur = []; render(); lcd.classList.remove('err'); lcd.textContent = `세트 ${set} · 설명을 듣고 순서대로`; }, 700);
+          }
+        }
+      }));
+    }
+    chooseRole();
+  }
+});
+
+const NEED_LABEL = { cam:'📷 카메라', motion:'📱 센서', mic:'🎤 마이크' };
+
+// ===================================================================
+// 화면 흐름
+// ===================================================================
+let cur = null, ctx = null, t0 = 0, lastFrame = 0, lastTimerSec = -1;
+const urlFor = (r, m) => `?${new URLSearchParams(Object.assign({}, r ? { room: r } : {}, m ? { m } : {}))}`;
+
+function showMenu(){
+  $('menu').hidden = false;
+  const chips = $('roomChips'); chips.innerHTML = '';
+  let sel = room || 'room3';
+  ROOMS.forEach(([id, name]) => {
+    const b = h(`<button class="chip ${id === sel ? 'on' : ''}">${esc(name)}</button>`);
+    b.onclick = () => { sel = id; chips.querySelectorAll('.chip').forEach(c => c.classList.remove('on')); b.classList.add('on'); renderList(); };
+    chips.appendChild(b);
+  });
+  function renderList(){
+    const list = $('menuList'); list.innerHTML = '';
+    Object.entries(CATS).forEach(([cat, label]) => {
+      const ms = MISSIONS.filter(m => m.cat === cat); if (!ms.length) return;
+      list.appendChild(h(`<div class="cat">${label}</div>`));
+      const g = h(`<div class="cards"></div>`);
+      ms.forEach(m => g.appendChild(h(`<a class="mcard" href="${urlFor(sel, m.id)}"><div class="e">${m.icon}</div><b>${esc(m.name)}</b>
+        <small>${m.needs.map(n => NEED_LABEL[n]).join(' ') || '화면만'}</small></a>`)));
+      list.appendChild(g);
+    });
+  }
+  renderList();
+  $('randomBtn').onclick = () => { const m = MISSIONS[Math.floor(Math.random() * MISSIONS.length)]; location.href = urlFor(sel, m.id); };
+}
+
+function showIntro(m){
+  cur = m;
+  document.title = m.name + ' · 말랑 미션';
+  $('intro').hidden = false;
+  $('introCat').textContent = CATS[m.cat];
+  $('introIcon').textContent = m.icon;
+  $('introName').textContent = m.name;
+  $('introDesc').innerHTML = esc(m.desc) + (room ? `<br><span style="color:var(--hud)">장소: ${esc(roomLabel(room))}</span>` : '');
+  $('introNeeds').innerHTML = ['📷 QR 카메라'].concat(m.needs.filter(n => n !== 'cam').map(n => NEED_LABEL[n])).map(t => `<span>${t}</span>`).join('');
+  $('backLink').href = urlFor(room, null);
+  $('toMenu').href = urlFor(room, null);
+  let inIframe; try { inIframe = window.self !== window.top; } catch(e) { inIframe = true; }
+  const gum = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia), doe = typeof window.DeviceOrientationEvent !== 'undefined';
+  const f = (ok, t) => `<span class="${ok?'ok':'bad'}">${t}</span>`;
+  $('env').innerHTML = `환경 점검 · iframe ${inIframe ? f(false,'안쪽') : f(true,'아님')} · isSecureContext ${f(window.isSecureContext, String(window.isSecureContext))}` +
+    ` · getUserMedia ${f(gum, gum?'지원':'없음')} · DeviceOrientationEvent ${f(doe, doe ? (typeof DeviceOrientationEvent.requestPermission === 'function' ? '지원(권한 필요)' : '지원') : '없음')}`;
+}
+
+$('startBtn').addEventListener('click', () => {
+  const m = cur; unlockAudio();
+  // iOS: 권한 요청은 반드시 탭 핸들러 안에서 바로
+  let permP;
+  const useMotion = m.needs.includes('motion');
+  const PermAPI = (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') ? DeviceOrientationEvent
+    : (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') ? DeviceMotionEvent : null;
+  if (useMotion && PermAPI) { try { permP = PermAPI.requestPermission().then(r => r, e => '에러:' + (e && e.name || e)); } catch(e) { permP = Promise.resolve('에러:' + e.name); } }
+  else permP = Promise.resolve(useMotion ? (typeof DeviceOrientationEvent !== 'undefined' ? '불필요' : '미지원') : '안 씀');
+  const camP = (navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+    ? navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+    : Promise.reject({ name: window.isSecureContext ? 'getUserMedia 없음' : 'https 아님' });
+  const micP = m.needs.includes('mic') && navigator.mediaDevices && navigator.mediaDevices.getUserMedia
+    ? navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }, video: false })
+    : null;
+  $('startBtn').disabled = true; $('startBtn').textContent = '준비 중…';
+  permP.then(r => Core.permResult = r);
+  if (micP) micP.then(s => { Core.micStream = s; Core.micResult = '허용'; }, e => { Core.micResult = (e && e.name) || '실패'; });
+  else Core.micResult = '안 씀';
+  camP.then(stream => {
+    cam.srcObject = stream; cam.hidden = false; const p = cam.play(); if (p && p.catch) p.catch(() => {});
+    Core.camOk = true; Core.camResult = '허용'; stars.hidden = true;
+  }, err => { Core.camOk = false; Core.camResult = (err && err.name) || String(err); })
+  .finally(() => Promise.all([permP, micP ? micP.catch(() => {}) : null]).then(() => {
+    $('intro').hidden = true; hud.hidden = false; mname.textContent = `${m.icon} ${m.name}`;
+    renderDiag(); setInterval(renderDiag, 500);
+    enterScan();
+    requestAnimationFrame(loop);
+  }));
+});
+
+// ----- QR -----
+const qrCanvas = document.createElement('canvas'), qrCtx = qrCanvas.getContext('2d', { willReadFrequently: true });
+let scanTimer = null, scanLock = false, lastMsgAt = 0;
+function setScanMsg(t, cls){ scanMsg.className = cls || ''; scanMsg.innerHTML = t ? `<span>${t}</span>` : ''; }
+function enterScan(){
+  if (ctx) { ctx.cleanup(); ctx = null; }
+  progressRow.hidden = true; showTip('');
+  if (Core.camOk) { cam.hidden = false; stars.hidden = true; }
+  scan.hidden = false; scan.classList.remove('flash'); scanLock = false;
+  scanSub.innerHTML = room ? `<b style="color:var(--hud)">${esc(roomLabel(room))}</b> 에 붙은 QR을 네모 안에 비춰 주세요` : '미션을 할 방의 QR을 네모 안에 비춰 주세요';
+  setScanMsg(Core.camOk ? '' : '카메라를 못 켜서 QR을 찍을 수 없어요', Core.camOk ? '' : 'err');
+  stopScan();
+  if (!Core.camOk) return;
+  const tick = () => {
+    scanTimer = setTimeout(tick, 180);
+    if (scanLock || !cam.videoWidth || cam.readyState < 2) return;
+    if (typeof window.jsQR !== 'function') { setScanMsg('QR 인식 라이브러리를 못 불러왔어요 (네트워크 확인)', 'err'); return; }
+    const vw = cam.videoWidth, vh = cam.videoHeight, sc = Math.min(1, 640 / Math.max(vw, vh)), w = Math.round(vw*sc), hh = Math.round(vh*sc);
+    if (qrCanvas.width !== w) qrCanvas.width = w; if (qrCanvas.height !== hh) qrCanvas.height = hh;
+    qrCtx.drawImage(cam, 0, 0, w, hh);
+    let code = null; try { code = jsQR(qrCtx.getImageData(0, 0, w, hh).data, w, hh, { inversionAttempts: 'attemptBoth' }); } catch(e) {}
+    if (code && code.data) onQr(code.data.trim());
+  };
+  tick();
+}
+function stopScan(){ if (scanTimer) clearTimeout(scanTimer); scanTimer = null; }
+function onQr(text){
+  const now = performance.now();
+  if (!text.startsWith(QR_PREFIX)) { if (now - lastMsgAt > 1500) { lastMsgAt = now; setScanMsg('말랑 방 QR이 아니에요', 'err'); } return; }
+  const r = text.slice(QR_PREFIX.length).trim();
+  if (!room) room = r;
+  if (r !== room) { if (now - lastMsgAt > 1500) { lastMsgAt = now; sfx.wrong(); setScanMsg(`여기가 아니에요! 찍은 곳: ${esc(roomLabel(r))}<br>가야 할 곳: ${esc(roomLabel(room))}`, 'err'); } return; }
+  scanLock = true; sfx.scanOk(); scan.classList.add('flash'); setScanMsg('확인! 미션 시작', 'ok');
+  setTimeout(beginMission, 500);
+}
+skipQr.addEventListener('click', () => { unlockAudio(); if (!room) room = 'room3'; beginMission(); });
+
+function beginMission(){
+  stopScan(); scan.hidden = true;
+  // AR이 아닌 미션은 카메라 화면을 가리고 우주 배경으로
+  if (!cur.ar || !Core.camOk) { cam.hidden = true; stars.hidden = false; }
+  t0 = performance.now(); lastTimerSec = -1;
+  ctx = makeCtx();
+  try { cur.start(ctx); } catch(e) { showTip('미션 오류: ' + e.message, true); console.error(e); }
+}
+
+function finishMission(){
+  const sec = Math.round((performance.now() - t0) / 1000);
+  sfx.done();
+  setTimeout(() => {
+    if (ctx) { ctx.cleanup(); ctx = null; }
+    showTip('');
+    $('doneTime').textContent = fmtTime(sec);
+    $('doneName').textContent = `${cur.icon} ${cur.name} · 걸린 시간`;
+    const d = $('done'); d.hidden = false;
+    const items = ['⭐','✨','🌟','💫', cur.icon];
+    for (let i = 0; i < 24; i++) { const c = h(`<div class="confetti">${items[i % items.length]}</div>`); c.style.left = Math.random()*100 + '%';
+      c.style.animationDuration = (2.2 + Math.random()*2) + 's'; c.style.animationDelay = Math.random()*.8 + 's'; d.appendChild(c); }
+  }, 300);
+}
+$('againBtn').addEventListener('click', () => { unlockAudio(); const d = $('done'); d.hidden = true; d.querySelectorAll('.confetti').forEach(c => c.remove()); enterScan(); });
+
+function loop(t){
+  requestAnimationFrame(loop);
+  const dt = lastFrame ? Math.min((t - lastFrame) / 1000, 0.1) : 0.016; lastFrame = t;
+  drawStars(t, dt);
+  frameFns.forEach(fn => fn(t, dt));
+  if (ctx && !ctx.finished) { const s = Math.floor((performance.now() - t0) / 1000); if (s !== lastTimerSec) { lastTimerSec = s; timerEl.textContent = fmtTime(s); } }
+}
+
+// 핀치/더블탭 확대 방지
+document.addEventListener('gesturestart', e => e.preventDefault());
+let lastTouch = 0;
+document.addEventListener('touchend', e => { const n = Date.now(); if (n - lastTouch < 300 && !e.target.closest('.key,.tile,.pad,.btn,.mcard,.chip')) e.preventDefault(); lastTouch = n; }, { passive: false });
+
+// 시작
+const found = MISSIONS.find(m => m.id === missionId);
+if (found) showIntro(found); else { showMenu(); requestAnimationFrame(loop); }
+})();
+</script>
+</body>
+</html>
