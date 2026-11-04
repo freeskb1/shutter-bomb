@@ -99,6 +99,26 @@
   @keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
 
 
+
+  /* 바퀴벌레 */
+  .roach{position:absolute;left:0;top:0;width:96px;height:96px;margin:-48px 0 0 -48px;will-change:transform}
+  .roach .in{position:absolute;inset:0;display:grid;place-items:center;font-size:52px;filter:drop-shadow(0 3px 2px rgba(0,0,0,.7))}
+  .roach .in.run{animation:scurry .1s linear infinite}
+  @keyframes scurry{0%{margin-top:-2px}50%{margin-top:2px}100%{margin-top:-2px}}
+  .roach.dead .in{animation:none;filter:grayscale(1) brightness(.6);transform:scaleY(.35) !important;transition:transform .12s}
+  .splat{position:absolute;left:0;top:0;width:80px;height:80px;margin:-40px 0 0 -40px;border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle,rgba(120,70,20,.85) 0 30%,rgba(120,70,20,.4) 45%,transparent 65%);animation:fade 1.4s ease-in forwards}
+  /* 풍선 */
+  .balloon{position:absolute;left:0;top:0;width:90px;height:130px;margin:-65px 0 0 -45px;will-change:transform}
+  .balloon .in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;animation:sway 2.4s ease-in-out infinite}
+  .balloon .b{font-size:76px;line-height:1}
+  .balloon.pop .in{animation:popb .25s ease-out forwards}
+  @keyframes sway{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+  @keyframes popb{0%{transform:scale(1);opacity:1}60%{transform:scale(1.5);opacity:.6}100%{transform:scale(1.8);opacity:0}}
+  .target{position:absolute;left:0;right:0;top:calc(var(--sat) + 118px);display:flex;justify-content:center;pointer-events:none}
+  .target span{background:var(--panel);border:3px solid #000;border-radius:999px;padding:4px 14px;font-size:18px;box-shadow:0 0 0 2px var(--line);display:flex;align-items:center;gap:6px}
+  .target b{font-size:30px;line-height:1}
+
   /* 도둑 */
   .thief{position:absolute;left:0;top:0;width:120px;height:150px;margin:-75px 0 0 -60px;will-change:transform;pointer-events:none}
   .thief .in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;animation:sneak 1.4s ease-in-out infinite}
@@ -324,7 +344,8 @@
     <div class="rooms" id="roomChips"></div>
     <div class="howto">
       방마다 QR 4장을 붙여요: <b>메인 QR</b>, 서로 떨어진 곳에 <b>A 지점</b>·<b>B 지점</b>, 방 문 안쪽에 <b>문 QR</b>.<br>
-      📱 <b>비추기 미션</b>은 QR을 카메라로 계속 비추고 있어야 작동해요.<br>
+      메인 QR을 찍으면 미션이 시작돼요.<br>
+      📷 <b>현실 배경 미션</b>은 카메라 속 내 방에서 해요.<br>
       📍 <b>이동 미션</b>은 중간에 A·B 지점 QR을 찍어야 해요.<br>
       ⏱️ 시간 안에 못 하면 실패, 메인 QR부터 다시!
     </div>
@@ -381,7 +402,7 @@ const ROOM_NAMES = Object.fromEntries(ROOMS);
 const SPOT_NAMES = { '':'메인', A:'A 지점', B:'B 지점', D:'문' };
 const VFOV = 62;
 const LOST_MS = 2000;
-const CATS = { real:'🔊 현실 + 소리 미션', term:'📱 비추기 미션 (QR을 비춘 채로)', move:'📍 이동 미션 (A·B 지점 QR)', duo:'👥 2인 미션' };
+const CATS = { real:'📷 현실 배경 · 소리 미션', screen:'🧩 화면 미션', move:'📍 이동 미션 (A·B 지점 QR)', duo:'👥 2인 미션' };
 
 const params = new URLSearchParams(location.search);
 let room = (params.get('room') || '').trim() || null;
@@ -702,11 +723,10 @@ const MISSIONS = [];
 const M = m => MISSIONS.push(m);
 
 // ---------- 📱 두꺼비집 고치기 (배선) ----------
-M({ id:'wires', cat:'term', icon:'⚡', name:'두꺼비집 고치기', needs:[], limit:30,
+M({ id:'wires', cat:'screen', icon:'⚡', name:'두꺼비집 고치기', needs:[], limit:30,
   desc:'정전이다! 두꺼비집의 같은 색 전선 6가닥을 끌어서 이어 불을 살리세요.',
-  rules:['📱 메인 QR을 비춘 채로', '⏱️ 30초'],
+  rules:['⏱️ 30초'],
   start(c){
-    c.terminal('');
     const COLORS = ['#ff4d4d','#ff9f1a','#ffe14d','#3ddc84','#3d8bff','#b45cff'];
     const N = COLORS.length;
     const x = c.center(`<div class="panel"><div class="lcd">⚡ 정전! 전선 ${N}가닥을 이으세요</div><div class="wires"><svg></svg></div></div>`);
@@ -747,16 +767,15 @@ M({ id:'wires', cat:'term', icon:'⚡', name:'두꺼비집 고치기', needs:[],
       }
       act = null;
     });
-    c.tip('QR을 비춘 채 조작하세요');
+    c.tip('같은 색끼리 끌어서 연결!');
   }
 });
 
 // ---------- 📱 도어락 열기 (숫자 기억) ----------
-M({ id:'numbers', cat:'term', icon:'🔐', name:'도어락 열기', needs:[], limit:60,
+M({ id:'numbers', cat:'screen', icon:'🔐', name:'도어락 열기', needs:[], limit:60,
   desc:'도어락이 고장! 숫자 1~15 위치를 4초 동안 외우고, 가려지면 1부터 순서대로 누르세요.',
-  rules:['📱 메인 QR을 비춘 채로', '❌ 틀리면 숫자를 잠깐 다시 보여줘요 (시간 손해)', '⏱️ 60초'],
+  rules:['❌ 틀리면 숫자를 잠깐 다시 보여줘요 (시간 손해)', '⏱️ 60초'],
   start(c){
-    c.terminal('');
     const N = 15;
     const x = c.center(`<div class="panel"><div class="lcd">외우세요!</div><div class="grid" style="grid-template-columns:repeat(4,1fr)"></div></div>`);
     const grid = x.querySelector('.grid'), lcd = x.querySelector('.lcd');
@@ -782,16 +801,15 @@ M({ id:'numbers', cat:'term', icon:'🔐', name:'도어락 열기', needs:[], li
     const iv = setInterval(() => { cd--; if (cd > 0) { lcd.textContent = `외우세요! ${cd}`; tone(800, 0, .05, 'sine', .06); } else clearInterval(iv); }, 1000);
     c.addCleanup(() => clearInterval(iv));
     reveal(4000);
-    c.progress(0, N); c.tip('QR을 비춘 채 조작하세요');
+    c.progress(0, N); c.tip('위치를 잘 외워 두세요!');
   }
 });
 
 // ---------- 📱 노래방 예약 (패턴 기억) ----------
-M({ id:'pattern', cat:'term', icon:'🎤', name:'노래방 예약', needs:[],
+M({ id:'pattern', cat:'screen', icon:'🎤', name:'노래방 예약', needs:[],
   desc:'노래방 기계가 먹통! 리모컨 버튼이 켜지는 순서를 보고 똑같이 누르세요. 7단계, 갈수록 빨라져요.',
-  rules:['📱 메인 QR을 비춘 채로', '❌ 3번 틀리면 실패'],
+  rules:['❌ 3번 틀리면 실패'],
   start(c){
-    c.terminal('');
     const ROUNDS = 7, MAXERR = 3;
     const x = c.center(`<div class="panel"><div class="dots">${'<i></i>'.repeat(ROUNDS)}</div><div class="lcd">잘 보세요…</div>
       <div class="grid" style="grid-template-columns:repeat(4,1fr)"></div><div class="label">목숨 <span class="lives">❤️❤️❤️</span></div></div>`);
@@ -823,17 +841,16 @@ M({ id:'pattern', cat:'term', icon:'🎤', name:'노래방 예약', needs:[],
         round++; lockAll(true); playing = true; c.later(play, 600);
       }
     }));
-    c.progress(0, ROUNDS); c.tip('QR을 비춘 채 조작하세요');
+    c.progress(0, ROUNDS); c.tip('불빛과 소리를 같이 기억하세요');
     play();
   }
 });
 
 // ---------- 📱 카드키 긁기 ----------
-M({ id:'card', cat:'term', icon:'🔑', name:'카드키 긁기', needs:[], limit:40,
+M({ id:'card', cat:'screen', icon:'🔑', name:'카드키 긁기', needs:[], limit:40,
   desc:'방 카드키가 안 먹혀요! 0.6~0.9초 속도로 끝까지 긁어서 3번 연속 성공하세요.',
-  rules:['📱 메인 QR을 비춘 채로', '❌ 한 번 실패하면 연속 기록 0', '⏱️ 40초'],
+  rules:['❌ 한 번 실패하면 연속 기록 0', '⏱️ 40초'],
   start(c){
-    c.terminal('');
     const NEED = 3;
     const x = c.center(`<div class="panel"><div class="dots">${'<i></i>'.repeat(NEED)}</div><div class="lcd">카드키를 오른쪽으로 긁으세요</div>
       <div class="slot"><div class="card"><b>말랑 펜션</b><div class="chip"></div><small>ROOM KEY · 203호</small></div></div>
@@ -864,18 +881,17 @@ M({ id:'card', cat:'term', icon:'🔑', name:'카드키 긁기', needs:[], limit
     });
     const up = () => { if (!drag) return; drag = null; miss('끝까지 긁어 주세요'); };
     card.addEventListener('pointerup', up); card.addEventListener('pointercancel', up);
-    c.progress(0, NEED); c.tip('QR을 비춘 채 조작하세요');
+    c.progress(0, NEED); c.tip('0.6~0.9초 속도로 한 번에 쭉~');
   }
 });
 
 // ---------- 📱 발열 체크 (A 지점 QR 비추기) ----------
-M({ id:'scan', cat:'term', icon:'🌡️', name:'발열 체크', needs:['motion'],
+M({ id:'scan', cat:'screen', icon:'🌡️', name:'발열 체크', needs:['motion'],
   desc:'체온계(A 지점)로 가서, QR을 비추고 손가락을 댄 채 15초 동안 가만히 있으세요.',
-  rules:['📍 A 지점으로 이동', '📱 A 지점 QR을 비춘 채로', '❌ 움직이거나 손을 떼거나 QR을 놓치면 0초부터'],
+  rules:['📍 A 지점으로 이동', '❌ 움직이거나 손을 떼면 0초부터'],
   async start(c){
     await c.checkpoint('A', '체온계로 이동');
     if (c.finished) return;
-    c.terminal('A');
     const DUR = 15;
     const x = c.center(`<div class="panel"><div class="scanbody"><div class="who">🧍</div><div class="bar"></div></div>
       <div class="readout"></div><div class="hand">🖐️</div><div class="label">손가락을 대고 있는 동안 스캔해요</div></div>`);
@@ -896,7 +912,7 @@ M({ id:'scan', cat:'term', icon:'🌡️', name:'발열 체크', needs:['motion'
       ro.innerHTML = LINES.slice(0, Math.floor(p * LINES.length + 0.001)).map(esc).join('<br>');
       if (p >= 1) { finishing = true; hand.classList.remove('on'); body.classList.remove('run'); sfx.ok(4); c.later(() => c.done(), 600); }
     });
-    c.tip(Core.motCount ? 'QR을 비춘 채 손가락을 대고 가만히' : '모션 센서 없음: 손가락만 대고 기다리세요', !Core.motCount);
+    c.tip(Core.motCount ? '폰을 들고 손가락을 댄 채 가만히' : '모션 센서 없음: 손가락만 대고 기다리세요', !Core.motCount);
   }
 });
 
@@ -1066,7 +1082,7 @@ M({ id:'blow', cat:'move', icon:'🔥', name:'숯불 살리기', needs:['mic'], 
 });
 
 // ---------- 📍 와이파이 잡기 (AR, →B) ----------
-M({ id:'antenna', cat:'move', icon:'📶', name:'와이파이 잡기', needs:['cam','motion'], ar:true, limit:60,
+M({ id:'antenna', cat:'real', icon:'📶', name:'와이파이 잡기', needs:['cam','motion'], ar:true, limit:60,
   desc:'펜션 와이파이가 안 터져요! 방 안 어딘가 떠다니는 신호 3개를 찾아 조준점 안에 2초씩 붙잡으세요. 다 잡으면 B 지점 공유기 재부팅!',
   rules:['📍 끝나면 B 지점', '⏱️ 60초 (이동 중엔 멈춤)'],
   async start(c){
@@ -1107,7 +1123,7 @@ M({ id:'antenna', cat:'move', icon:'📶', name:'와이파이 잡기', needs:['c
 });
 
 // ---------- 📍 분리수거 (AR, 만지면 안 되는 것, →A 쓰레기통) ----------
-M({ id:'junk', cat:'move', icon:'🗑️', name:'분리수거', needs:['cam','motion'], ar:true, limit:60,
+M({ id:'junk', cat:'real', icon:'🗑️', name:'분리수거', needs:['cam','motion'], ar:true, limit:60,
   desc:'어젯밤 파티 흔적! 둘러보며 노란 쓰레기 8개를 주우세요. 🔴 빨간 건 만지면 안 돼요(벌레·남의 양말)! 하나를 떨어뜨려요. 다 주우면 A 지점 쓰레기통에 버리기.',
   rules:['📍 끝나면 A 지점(쓰레기통)', '⏱️ 60초 (이동 중엔 멈춤)'],
   async start(c){
@@ -1159,7 +1175,7 @@ M({ id:'junk', cat:'move', icon:'🗑️', name:'분리수거', needs:['cam','mo
 });
 
 // ---------- 📍 모기 잡기 (AR, 2회차, B 파리채 충전) ----------
-M({ id:'asteroids', cat:'move', icon:'🦟', name:'모기 잡기', needs:['cam','motion'], ar:true,
+M({ id:'asteroids', cat:'real', icon:'🦟', name:'모기 잡기', needs:['cam','motion'], ar:true,
   desc:'잠 못 자게 하는 모기떼! 조준점에 모기를 맞추고 화면을 탭해서 잡으세요. 1차 10마리(25초) → B 지점에서 전기 파리채 충전 → 2차 10마리(25초).',
   rules:['📍 메인 → B 지점(파리채 충전)', '⏱️ 회차마다 25초'],
   async start(c){
@@ -1216,6 +1232,105 @@ M({ id:'asteroids', cat:'move', icon:'🦟', name:'모기 잡기', needs:['cam',
   }
 });
 
+
+
+// ---------- 📷 바퀴벌레 잡기 (AR, 바닥) ----------
+M({ id:'roach', cat:'real', icon:'🪳', name:'바퀴벌레 잡기', needs:['cam','motion'], ar:true, limit:45,
+  desc:'으악! 방바닥에 바퀴벌레가 나타났어요. 폰으로 바닥을 비추며 찾아서, 멈춘 순간 직접 탭해서 잡으세요. 8마리!',
+  rules:['👇 폰을 바닥 쪽으로 비춰요', '👆 바퀴벌레를 직접 탭', '⏱️ 45초'],
+  async start(c){
+    const v = arView(c), N = 8, ALIVE = 3;
+    let got = 0, spawned = 0; const roaches = [];
+    function spawn(){
+      if (spawned >= N + 4) return; spawned++;
+      const el = h(`<div class="roach"><div class="in">🪳</div></div>`); c.el.appendChild(el);
+      const r = { el, inner: el.querySelector('.in'), yaw: v.yaw + rand(-70, 70), pitch: rand(-55, -22), vy: 0, vp: 0, state: 'stop', until: performance.now() + rand(300, 900), dead: false, x: 0, y: 0, rot: rand(0, 360) };
+      el.addEventListener('pointerup', () => {
+        if (v.moved > 14 || r.dead || c.finished) return;
+        if (r.state === 'run' && Math.random() < 0.5) { sfx.wrong(); popText(c.el, r.x, r.y - 40, '놓쳤다!', true); r.state = 'run'; r.until = performance.now() + 500; return; }
+        r.dead = true; got++; el.classList.add('dead'); sfx.boom(); tone(900, 0, .05, 'square', .08);
+        const sp = h(`<div class="splat"></div>`); sp.style.transform = `translate3d(${r.x}px,${r.y}px,0)`; c.el.insertBefore(sp, c.el.firstChild); setTimeout(() => sp.remove(), 1400);
+        popText(c.el, r.x, r.y - 40, '찍!'); setTimeout(() => el.remove(), 500);
+        c.progress(got, N, '마리');
+        if (got >= N) { c.later(() => c.done(), 700); return; }
+        setTimeout(spawn, rand(300, 1200));
+      });
+      roaches.push(r);
+    }
+    for (let i = 0; i < ALIVE; i++) spawn();
+    c.progress(0, N, '마리');
+    const tipNow = () => c.tip(v.drag ? v.dragTip + ' (아래로 끌면 바닥)' : '폰을 바닥 쪽으로! 멈췄을 때 탭하면 잘 잡혀요', v.drag);
+    c.onSwitch = tipNow; tipNow();
+    c.onFrame((t, dt) => {
+      v.update();
+      const now = performance.now();
+      let nearest = null, nd = Infinity, any = false;
+      for (const r of roaches) {
+        if (r.dead) continue;
+        if (now > r.until) {
+          if (r.state === 'stop') { r.state = 'run'; const a = rand(0, 6.283), sp = rand(25, 45); r.vy = Math.cos(a) * sp; r.vp = Math.sin(a) * sp * 0.6; r.rot = a * 180 / Math.PI + 90; r.until = now + rand(350, 900); }
+          else { r.state = 'stop'; r.vy = r.vp = 0; r.until = now + rand(500, 1600); }
+          r.inner.classList.toggle('run', r.state === 'run');
+        }
+        r.yaw = norm360(r.yaw + r.vy * dt); r.pitch += r.vp * dt;
+        if (r.pitch > -18 || r.pitch < -62) { r.vp = -r.vp; r.pitch = clamp(r.pitch, -62, -18); }
+        const p = v.project(r.yaw, r.pitch); r.x = p.x; r.y = p.y;
+        r.el.style.transform = p.vis ? `translate3d(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px,0)` : 'translate3d(-9999px,0,0)';
+        r.inner.style.transform = `rotate(${r.rot}deg)`;
+        if (p.onScreen) any = true; else { const d = Math.hypot(p.dyaw, p.dpitch); if (d < nd) { nd = d; nearest = p; } }
+      }
+      pointArrow(any ? null : nearest);
+    });
+  }
+});
+
+// ---------- 📷 풍선 터뜨리기 (AR, 떠오르는 풍선) ----------
+M({ id:'balloon', cat:'real', icon:'🎈', name:'풍선 터뜨리기', needs:['cam','motion'], ar:true, limit:45,
+  desc:'방 안에 풍선이 둥둥 떠올라요! 위에 나온 색 풍선만 탭해서 터뜨리세요. 다른 색을 터뜨리면 -1, 천장까지 올라가면 놓쳐요. 12개!',
+  rules:['🎯 지정된 색만 터뜨리기', '❌ 다른 색은 -1', '⏱️ 45초'],
+  async start(c){
+    const v = arView(c), N = 12, ALIVE = 6;
+    const COLORS = [['빨강', 0], ['파랑', 200], ['초록', 110], ['보라', 260]];
+    const tgt = Math.floor(Math.random() * COLORS.length);
+    const badge = h(`<div class="target"><span>이 색만 터뜨려요 <b style="filter:hue-rotate(${COLORS[tgt][1]}deg)">🎈</b> ${COLORS[tgt][0]}</span></div>`); c.el.appendChild(badge);
+    let got = 0; const bs = [];
+    function spawn(){
+      const isT = Math.random() < 0.45, ci = isT ? tgt : (tgt + 1 + Math.floor(Math.random() * (COLORS.length - 1))) % COLORS.length;
+      const el = h(`<div class="balloon"><div class="in" style="animation-delay:${(-Math.random()*2.4).toFixed(2)}s"><div class="b" style="filter:hue-rotate(${COLORS[ci][1]}deg) drop-shadow(0 4px 4px rgba(0,0,0,.5))">🎈</div></div></div>`);
+      c.el.appendChild(el);
+      const b = { el, ci, yaw: v.yaw + rand(-80, 80), pitch: rand(-35, -15), up: rand(5, 10), sw: rand(-4, 4), ph: Math.random() * 6, dead: false, x: 0, y: 0 };
+      el.addEventListener('pointerup', () => {
+        if (v.moved > 14 || b.dead || c.finished) return;
+        b.dead = true; el.classList.add('pop'); setTimeout(() => el.remove(), 260);
+        if (actx) { knockSound(0); tone(1800, 0, .05, 'square', .06); }
+        if (b.ci === tgt) { got++; sfx.ok(got); popText(c.el, b.x, b.y - 50, '펑!'); }
+        else { got = Math.max(0, got - 1); sfx.wrong(); popText(c.el, b.x, b.y - 50, '그 색 아냐! -1', true); }
+        c.progress(got, N, '개');
+        if (got >= N) { c.later(() => c.done(), 600); return; }
+        setTimeout(spawn, 300);
+      });
+      bs.push(b);
+    }
+    for (let i = 0; i < ALIVE; i++) spawn();
+    c.progress(0, N, '개');
+    const tipNow = () => c.tip(v.drag ? v.dragTip + ', 지정된 색만 탭!' : '둘러보며 지정된 색 풍선만 탭!', v.drag);
+    c.onSwitch = tipNow; tipNow();
+    c.onFrame((t, dt) => {
+      v.update();
+      let nearest = null, nd = Infinity, any = false;
+      for (const b of bs) {
+        if (b.dead) continue;
+        b.pitch += b.up * dt; b.yaw = norm360(b.yaw + b.sw * dt * Math.sin(t / 1300 + b.ph));
+        if (b.pitch > 55) { b.dead = true; b.el.remove(); setTimeout(spawn, 200); continue; }   // 천장까지 올라가면 놓침
+        const p = v.project(b.yaw, b.pitch); b.x = p.x; b.y = p.y;
+        b.el.style.transform = p.vis ? `translate3d(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px,0)` : 'translate3d(-9999px,0,0)';
+        if (b.ci !== tgt) continue;
+        if (p.onScreen) any = true; else { const d = Math.hypot(p.dyaw, p.dpitch); if (d < nd) { nd = d; nearest = p; } }
+      }
+      pointArrow(any ? null : nearest);
+    });
+  }
+});
 
 // ---------- 🔊 도둑 내쫓기 (AR + 소리 크기, →문) ----------
 M({ id:'thief', cat:'real', icon:'🦹', name:'도둑 내쫓기', needs:['cam','motion','mic'], ar:true, limit:60,
@@ -1418,7 +1533,6 @@ M({ id:'code', cat:'duo', icon:'🛵', name:'배달 주문', needs:[],
       c.tip('두 사람이 서로 다른 역할을 고르세요');
     }
     function sender(){
-      c.terminal('');
       const set = 10 + Math.floor(Math.random() * 90), ans = ansOf(set);
       box.innerHTML = `<div class="lcd">주문 담당에게 가게 번호를 불러 주세요</div><div class="codeshow">${set}</div>
         <div class="label" style="margin:0 0 4px">아래 메뉴 6개를 순서대로 말로만! (화면 보여주기 금지)</div>
@@ -1434,7 +1548,6 @@ M({ id:'code', cat:'duo', icon:'🛵', name:'배달 주문', needs:[],
       };
     }
     function receiver(){
-      c.terminal('A');
       digitPad(2, s => { symbolInput(parseInt(s, 10)); return true; }, '메뉴판 담당이 부른 가게 번호');
       c.tip('메뉴판 담당에게 가게 번호를 물어보세요');
     }
