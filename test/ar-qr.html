@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>방 QR 인쇄</title>
+<title>펜션 살리기 QR 인쇄</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&display=swap" rel="stylesheet">
@@ -12,18 +12,18 @@
 <style>
   [hidden]{display:none!important}
   :root{
-    --bg:#05060f; --ink:#eaf2ff; --dim:#8fa3c8; --hud:#7cf7ff; --yellow:#ffd43b;
+    --bg:#1b130e; --ink:#fff4e6; --dim:#cdb69c; --hud:#ffcf6b; --yellow:#ffd43b;
     --title:'Black Han Sans','Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;
     --body:'Do Hyeon','Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;background:radial-gradient(ellipse at 50% 0%,#1a2150 0%,#0a0d22 50%,#04050c 100%) fixed,var(--bg);
+  html,body{margin:0;background:radial-gradient(ellipse at 50% 0%,#4a3222 0%,#22170f 50%,#0e0906 100%) fixed,var(--bg);
     color:var(--ink);font-family:var(--body)}
   main{max-width:720px;margin:0 auto;
     padding:calc(env(safe-area-inset-top,0px) + 24px) calc(env(safe-area-inset-right,0px) + 16px)
             calc(env(safe-area-inset-bottom,0px) + 40px) calc(env(safe-area-inset-left,0px) + 16px)}
   header{text-align:center;margin-bottom:22px}
-  .badge{display:inline-block;font-size:14px;letter-spacing:2px;color:var(--hud);border:2px solid rgba(124,247,255,.45);
+  .badge{display:inline-block;font-size:14px;letter-spacing:2px;color:var(--hud);border:2px solid rgba(255,207,107,.5);
     border-radius:999px;padding:4px 12px;margin-bottom:12px}
   h1{margin:0 0 8px;font-family:var(--title);font-weight:normal;font-size:40px;color:var(--yellow);
     -webkit-text-stroke:1.5px #000;text-shadow:0 4px 0 #000}
@@ -44,11 +44,13 @@
   .link{display:inline-block;margin-top:10px;font-size:18px;color:#0b63d1;word-break:break-all}
   .card.sub{background:#fff8d6}
   .card.sub h2{font-size:36px}
-  .card .where{font-size:16px;color:#333;margin:-6px 0 10px;word-break:keep-all}
+  .card .where{font-size:16px;color:#333;margin:-6px auto 10px;word-break:keep-all;max-width:90%}
+  .card .where span{display:inline-block;min-width:120px;border-bottom:2px dashed #b08a5a;padding:0 6px;outline:none;color:#000}
+  .card .where span:focus{background:#fff1c9}
   .rooms{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0 0 16px}
-  .chip{border:3px solid #000;border-radius:999px;background:#26305e;color:#fff;font-family:var(--body);font-size:18px;padding:6px 14px;box-shadow:0 4px 0 #000}
+  .chip{border:3px solid #000;border-radius:999px;background:#5a3e2b;color:#fff;font-family:var(--body);font-size:18px;padding:6px 14px;box-shadow:0 4px 0 #000}
   .chip.on{background:var(--hud);color:#000}
-  .guide{text-align:left;font-size:16px;line-height:1.5;color:var(--dim);border:2px solid rgba(124,247,255,.45);border-radius:14px;padding:10px 14px;margin:0 auto 18px;max-width:520px;word-break:keep-all}
+  .guide{text-align:left;font-size:16px;line-height:1.5;color:var(--dim);border:2px solid rgba(255,207,107,.5);border-radius:14px;padding:10px 14px;margin:0 auto 18px;max-width:520px;word-break:keep-all}
 
   @media print{
     @page{size:A4;margin:12mm}
@@ -75,17 +77,18 @@
 <body>
 <main>
   <header>
-    <div class="badge">AR MISSION · 테스트용</div>
+    <div class="badge">🏠 펜션 살리기 · 테스트용</div>
     <h1>방 QR 인쇄</h1>
-    <p>방마다 3장: <b>메인 단말기</b>(12cm, 1장에 1개)<br>+ <b>A·B 지점</b>(8cm, 1장에 2개)</p>
+    <p>방마다 3장: <b>메인 QR</b>(12cm, 1장에 1개)<br>+ <b>A·B 지점</b>(8cm, 1장에 2개)</p>
     <div class="rooms" id="chips"></div>
     <button class="btn" onclick="window.print()">인쇄하기</button>
   </header>
   <div class="guide noprint">
     📌 붙이는 법<br>
-    · 메인 단말기: 방 가운데쯤 눈높이 벽 (폰으로 비춘 채 퍼즐을 풀 곳)<br>
+    · 메인 QR: 방 가운데쯤 눈높이 벽 (폰으로 비춘 채 퍼즐을 풀 곳)<br>
     · A·B 지점: 메인과 <b>멀리, 서로도 떨어진 곳</b> (방 반대편 벽, 문 옆, 창가 등)<br>
-    · 너무 높거나 낮지 않게, 빛 반사 없는 곳
+    · 너무 높거나 낮지 않게, 빛 반사 없는 곳<br>
+    ✏️ 각 QR의 <b>'붙일 곳'</b> 칸을 눌러 실제 장소(예: 냉장고 옆, 현관 신발장)를 적고 인쇄하세요
   </div>
   <div id="cards"></div>
   <p class="noprint" id="libErr" hidden style="text-align:center;color:#ff5c7a">QR 생성 라이브러리를 못 불러왔어요. 네트워크를 확인하고 새로고침해 주세요.</p>
@@ -101,7 +104,7 @@
   const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   const SPOTS = [
-    { s: '',  label: '메인 단말기', cls: 'main', where: '방 가운데쯤 눈높이 벽' },
+    { s: '',  label: '메인 QR', cls: 'main', where: '방 가운데 눈높이 벽' },
     { s: 'A', label: 'A 지점',     cls: 'sub a', where: '메인에서 멀리 떨어진 곳' },
     { s: 'B', label: 'B 지점',     cls: 'sub b', where: '메인·A와 떨어진 곳' },
   ];
@@ -113,9 +116,9 @@
       const card = document.createElement('section');
       card.className = 'card ' + sp.cls; card.dataset.room = r.id;
       card.innerHTML = `
-        <div class="tag">말랑 미션 · ${esc(r.name)}</div>
+        <div class="tag">🏠 펜션 살리기 · ${esc(r.name)}</div>
         <h2>${esc(sp.s ? r.name + ' ' + sp.label : r.name)}</h2>
-        ${sp.s ? `<div class="where">${esc(sp.where)}에 붙이기</div>` : ''}
+        <div class="where">붙일 곳: <span contenteditable="true" spellcheck="false">${esc(sp.where)}</span></div>
         <div class="qr"></div>
         <div class="code">${esc(data)}</div>
         ${sp.s ? '' : `<a class="link" href="${esc(url)}">이 방 미션 목록 열기 →<br>${esc(url)}</a>`}`;

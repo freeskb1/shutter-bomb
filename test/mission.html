@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#05060f">
-<title>말랑 미션</title>
+<meta name="theme-color" content="#1b130e">
+<title>펜션 살리기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&display=swap" rel="stylesheet">
@@ -14,9 +14,9 @@
 <style>
   [hidden]{display:none!important}
   :root{
-    --bg:#05060f; --ink:#eaf2ff; --dim:#8fa3c8; --hud:#7cf7ff; --yellow:#ffd43b;
-    --red:#ff5c7a; --green:#5cffb0;
-    --panel:rgba(10,16,38,.92); --line:rgba(124,247,255,.45);
+    --bg:#1b130e; --ink:#fff4e6; --dim:#cdb69c; --hud:#ffcf6b; --yellow:#ffd43b;
+    --red:#ff6b6b; --green:#7be08f;
+    --panel:rgba(52,35,24,.94); --line:rgba(255,207,107,.5);
     --title:'Black Han Sans','Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;
     --body:'Do Hyeon','Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;
     --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
@@ -29,9 +29,9 @@
 
   #cam,#stars{position:fixed;inset:0;width:100%;height:100%;z-index:0}
   #cam{object-fit:cover;background:#000}
-  #stars{background:radial-gradient(ellipse at 50% 30%,#141a3d 0%,#070916 60%,#03040a 100%)}
-  #tint{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at center,rgba(5,6,15,0) 55%,rgba(5,6,15,.55) 100%)}
-  body.term #tint{background:rgba(3,6,18,.55)}
+  #stars{background:radial-gradient(ellipse at 50% 15%,#4a3222 0%,#22170f 55%,#0e0906 100%)}
+  #tint{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at center,rgba(14,9,6,0) 55%,rgba(14,9,6,.55) 100%)}
+  body.term #tint{background:rgba(20,12,6,.55)}
 
   #stage{position:fixed;inset:0;z-index:2;overflow:hidden}
   .layer{position:absolute;inset:0}
@@ -48,10 +48,10 @@
   .meter i{display:block;height:100%;width:0;background:var(--hud);transition:width .08s}
   .label{font-size:16px;color:var(--dim);text-align:center;margin:10px 0 0;word-break:keep-all}
   .dots{display:flex;justify-content:center;gap:8px;margin-bottom:10px}
-  .dots i{width:14px;height:14px;border-radius:50%;border:2px solid #000;background:#1b2550}
+  .dots i{width:14px;height:14px;border-radius:50%;border:2px solid #000;background:#5a3e2b}
   .dots i.on{background:var(--green);box-shadow:0 0 8px var(--green)}
 
-  /* 단말기 연결 */
+  /* QR 비추기 연결 */
   .lost{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
     background:rgba(20,0,8,.72);padding:0 24px;font-size:20px;word-break:keep-all}
   .lost b{font-family:var(--title);font-weight:normal;font-size:30px;color:var(--red);margin-bottom:8px;text-shadow:0 3px 0 #000}
@@ -70,10 +70,11 @@
   .junk.got{pointer-events:none}
   .junk.got .float{animation:gone .55s ease-in forwards}
   .rock{position:absolute;left:0;top:0;width:84px;height:84px;margin:-42px 0 0 -42px;will-change:transform;pointer-events:none}
-  .rock .emo{position:absolute;inset:0;display:grid;place-items:center;font-size:52px;animation:spin 4s linear infinite;filter:drop-shadow(0 0 10px rgba(255,120,60,.9))}
+  .rock .emo{position:absolute;inset:0;display:grid;place-items:center;font-size:46px;animation:buzz .18s linear infinite;filter:drop-shadow(0 0 8px rgba(255,255,255,.8))}
+  @keyframes buzz{0%{transform:translate(0,0) rotate(-6deg)}25%{transform:translate(2px,-2px)}50%{transform:translate(-1px,2px) rotate(6deg)}75%{transform:translate(-2px,-1px)}100%{transform:translate(0,0) rotate(-6deg)}}
   .rock.boom .emo{animation:gone .45s ease-in forwards}
   .orb{position:absolute;left:0;top:0;width:96px;height:96px;margin:-48px 0 0 -48px;will-change:transform;pointer-events:none}
-  .orb .in{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;font-size:44px;background:radial-gradient(circle,rgba(124,247,255,.6),rgba(124,247,255,0) 70%);animation:pulse 1s ease-in-out infinite}
+  .orb .in{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;font-size:44px;background:radial-gradient(circle,rgba(255,207,107,.6),rgba(255,207,107,0) 70%);animation:pulse 1s ease-in-out infinite}
   .cross{position:absolute;left:50%;top:50%;width:84px;height:84px;margin:-42px 0 0 -42px;pointer-events:none}
   .cross::before,.cross::after{content:"";position:absolute;background:var(--red);box-shadow:0 0 8px var(--red)}
   .cross::before{left:50%;top:0;bottom:0;width:3px;margin-left:-1.5px}
@@ -107,45 +108,45 @@
 
   /* 타일 / 패드 / 키 */
   .grid{display:grid;gap:8px}
-  .tile{aspect-ratio:1/1;border:3px solid #000;border-radius:12px;background:#1b2550;box-shadow:0 5px 0 #000;
+  .tile{aspect-ratio:1/1;border:3px solid #000;border-radius:12px;background:#5a3e2b;box-shadow:0 5px 0 #000;
     font-family:var(--title);font-size:28px;color:#fff;display:grid;place-items:center;touch-action:manipulation}
   .tile:active{transform:translateY(5px);box-shadow:0 0 0 #000}
-  .tile.hid{color:transparent;background:#24306a}
+  .tile.hid{color:transparent;background:#6b4a33}
   .tile.ok{background:#14674a;color:var(--green);box-shadow:0 0 0 #000;transform:translateY(5px)}
   .tile.blank{visibility:hidden}
-  .pad{aspect-ratio:1/1;border:3px solid #000;border-radius:12px;background:#16204a;box-shadow:0 4px 0 #000;touch-action:manipulation}
-  .pad.lit{background:var(--hud);box-shadow:0 0 20px var(--hud),0 4px 0 #000}
+  .pad{aspect-ratio:1/1;border:3px solid #000;border-radius:12px;background:#3d2a1f;box-shadow:0 4px 0 #000;touch-action:manipulation}
+  .pad.lit{background:#ff5fd2;box-shadow:0 0 22px #ff5fd2,0 4px 0 #000}
   .pad.lock{pointer-events:none}
   .key{border:3px solid #000;border-radius:12px;background:#dfe7ff;color:#111;box-shadow:0 4px 0 #000;font-family:var(--title);font-size:26px;padding:10px 0;touch-action:manipulation}
   .key:active{transform:translateY(4px);box-shadow:0 0 0 #000}
-  .key.sym{font-size:30px;padding:8px 0;background:#26305e}
+  .key.sym{font-size:30px;padding:8px 0;background:#5a3e2b}
   .slots{display:flex;justify-content:center;gap:6px;margin-bottom:12px}
-  .slots span{width:48px;height:48px;border:3px solid #000;border-radius:10px;background:#0b1230;display:grid;place-items:center;font-size:28px;box-shadow:inset 0 0 0 2px var(--line)}
+  .slots span{width:48px;height:48px;border:3px solid #000;border-radius:10px;background:#2a1d14;display:grid;place-items:center;font-size:28px;box-shadow:inset 0 0 0 2px var(--line)}
   .codeshow{font-family:var(--title);font-size:60px;text-align:center;color:var(--yellow);-webkit-text-stroke:2px #000;letter-spacing:6px}
   .syms{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:8px 0}
-  .syms span{aspect-ratio:1/1;border-radius:10px;background:#0b1230;border:3px solid #000;display:grid;place-items:center;font-size:30px}
+  .syms span{aspect-ratio:1/1;border-radius:10px;background:#2a1d14;border:3px solid #000;display:grid;place-items:center;font-size:30px}
 
   /* 카드 */
-  .slot{position:relative;height:150px;border:3px solid #000;border-radius:16px;background:#0b1230;overflow:hidden;box-shadow:inset 0 0 0 2px var(--line)}
+  .slot{position:relative;height:150px;border:3px solid #000;border-radius:16px;background:#2a1d14;overflow:hidden;box-shadow:inset 0 0 0 2px var(--line)}
   .slot::after{content:"";position:absolute;left:10px;right:10px;top:50%;height:6px;margin-top:-3px;border-radius:3px;background:#000;opacity:.6}
-  .card{position:absolute;left:8px;top:16px;width:150px;height:116px;border:3px solid #000;border-radius:12px;background:linear-gradient(135deg,#ffe08a,#ffb703);
+  .card{position:absolute;left:8px;top:16px;width:150px;height:116px;border:3px solid #000;border-radius:12px;background:linear-gradient(135deg,#fff3dc,#ffcf6b);
     box-shadow:0 4px 0 #000;color:#000;padding:10px;z-index:1;touch-action:none}
   .card b{font-family:var(--title);font-weight:normal;font-size:18px}
   .card .chip{width:34px;height:26px;border-radius:6px;background:#c9a227;border:2px solid #000;margin:8px 0}
   .card small{font-size:13px}
 
   /* 스캔 */
-  .scanbody{position:relative;height:200px;display:grid;place-items:center;overflow:hidden;border-radius:16px;background:#061a24;border:3px solid #000}
-  .scanbody .who{font-size:130px;line-height:1;filter:drop-shadow(0 0 14px rgba(124,247,255,.7))}
-  .scanbody .bar{position:absolute;left:0;right:0;height:4px;background:var(--hud);box-shadow:0 0 16px 4px rgba(124,247,255,.7);top:10%}
+  .scanbody{position:relative;height:200px;display:grid;place-items:center;overflow:hidden;border-radius:16px;background:#2a1d14;border:3px solid #000}
+  .scanbody .who{font-size:130px;line-height:1;filter:drop-shadow(0 0 14px rgba(255,207,107,.7))}
+  .scanbody .bar{position:absolute;left:0;right:0;height:4px;background:var(--hud);box-shadow:0 0 16px 4px rgba(255,207,107,.7);top:10%}
   .scanbody.run .bar{animation:scanmove 1.6s ease-in-out infinite alternate}
-  .hand{margin:12px auto 0;width:130px;height:130px;border-radius:50%;border:4px dashed var(--hud);display:grid;place-items:center;font-size:56px;touch-action:none;background:rgba(124,247,255,.06)}
-  .hand.on{border-style:solid;background:rgba(124,247,255,.25);box-shadow:0 0 30px rgba(124,247,255,.6)}
+  .hand{margin:12px auto 0;width:130px;height:130px;border-radius:50%;border:4px dashed var(--hud);display:grid;place-items:center;font-size:56px;touch-action:none;background:rgba(255,207,107,.06)}
+  .hand.on{border-style:solid;background:rgba(255,207,107,.25);box-shadow:0 0 30px rgba(255,207,107,.6)}
   .readout{font-size:15px;color:var(--hud);min-height:60px;margin-top:8px;line-height:1.35}
 
   canvas.maze{display:block;margin:0 auto;border:3px solid #000;border-radius:10px;box-shadow:0 0 0 2px var(--line)}
 
-  /* 엔진 */
+  /* 샴페인 */
   .engine{font-size:96px;text-align:center;line-height:1.1}
   .light{width:64px;height:64px;border-radius:50%;margin:0 auto 10px;border:4px solid #000;background:#333}
   .light.go{background:#2bff88;box-shadow:0 0 26px #2bff88}
@@ -153,12 +154,12 @@
 
   /* 산소 */
   .o2{display:flex;gap:18px;justify-content:center;align-items:flex-end}
-  .vbar{position:relative;width:70px;height:240px;border:4px solid #000;border-radius:16px;background:#0b1230;overflow:hidden;box-shadow:0 0 0 2px var(--line)}
+  .vbar{position:relative;width:70px;height:240px;border:4px solid #000;border-radius:16px;background:#2a1d14;overflow:hidden;box-shadow:0 0 0 2px var(--line)}
   .vbar .band{position:absolute;left:0;right:0;background:rgba(92,255,176,.25);border-top:3px dashed var(--green);border-bottom:3px dashed var(--green)}
   .vbar .lv{position:absolute;left:4px;right:4px;height:6px;margin-bottom:-3px;border-radius:3px;background:#fff;box-shadow:0 0 10px #fff;bottom:0}
   .vbar.in .lv{background:var(--green);box-shadow:0 0 12px var(--green)}
-  .tank{position:relative;width:96px;height:240px;border:4px solid #000;border-radius:36px;background:#0b1230;overflow:hidden;box-shadow:0 0 0 2px var(--line)}
-  .tank i{position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(#7cf7ff,#2b7cff)}
+  .tank{position:relative;width:96px;height:240px;border:4px solid #000;border-radius:36px;background:#2a1d14;overflow:hidden;box-shadow:0 0 0 2px var(--line)}
+  .tank i{position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(#ffd24a,#ff7a1a 55%,#d6331a)}
   .tank b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--title);font-weight:normal;font-size:24px;z-index:1;text-shadow:0 2px 0 #000}
 
   /* HUD */
@@ -185,12 +186,12 @@
   #scan h2{margin:0 0 6px;font-family:var(--title);font-weight:normal;font-size:28px;color:var(--yellow);-webkit-text-stroke:1px #000;text-shadow:0 3px 0 #000;text-align:center}
   #scan .sub{margin:0 0 14px;font-size:19px;text-align:center;text-shadow:0 2px 4px #000;word-break:keep-all}
   .frame{position:relative;width:min(62vw,280px);aspect-ratio:1/1}
-  .frame::before,.frame::after,.frame i::before,.frame i::after{content:"";position:absolute;width:44px;height:44px;border:5px solid var(--hud);filter:drop-shadow(0 0 6px rgba(124,247,255,.8))}
+  .frame::before,.frame::after,.frame i::before,.frame i::after{content:"";position:absolute;width:44px;height:44px;border:5px solid var(--hud);filter:drop-shadow(0 0 6px rgba(255,207,107,.8))}
   .frame::before{left:0;top:0;border-right:0;border-bottom:0;border-radius:14px 0 0 0}
   .frame::after{right:0;top:0;border-left:0;border-bottom:0;border-radius:0 14px 0 0}
   .frame i::before{left:0;bottom:0;border-right:0;border-top:0;border-radius:0 0 0 14px}
   .frame i::after{right:0;bottom:0;border-left:0;border-top:0;border-radius:0 0 14px 0}
-  .frame .scanline{position:absolute;left:8%;right:8%;height:3px;top:10%;border-radius:2px;background:var(--hud);box-shadow:0 0 12px 2px rgba(124,247,255,.8);animation:scanmove 2s ease-in-out infinite alternate}
+  .frame .scanline{position:absolute;left:8%;right:8%;height:3px;top:10%;border-radius:2px;background:var(--hud);box-shadow:0 0 12px 2px rgba(255,207,107,.8);animation:scanmove 2s ease-in-out infinite alternate}
   @keyframes scanmove{to{top:88%}}
   #scan.cp .frame::before,#scan.cp .frame::after,#scan.cp .frame i::before,#scan.cp .frame i::after{border-color:var(--yellow)}
   #scan.flash .frame::before,#scan.flash .frame::after,#scan.flash .frame i::before,#scan.flash .frame i::after{border-color:var(--green)}
@@ -201,10 +202,16 @@
 
   /* 오버레이 */
   .overlay{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
-    background:radial-gradient(ellipse at 50% 20%,#1a2150 0%,#0a0d22 55%,#04050c 100%);
+    background:radial-gradient(ellipse at 50% 10%,#4a3222 0%,#22170f 55%,#0e0906 100%);
     padding:calc(var(--sat) + 22px) calc(var(--sar) + 20px) calc(var(--sab) + 18px) calc(var(--sal) + 20px);overflow:hidden}
   .overlay.glass{background:rgba(4,6,16,.86);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
   .overlay.scroll{justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+  .lights{position:absolute;left:0;right:0;top:calc(var(--sat) + 2px);height:26px;pointer-events:none;
+    background:radial-gradient(circle at 50% 70%,#ffe08a 0 5px,rgba(255,207,107,.35) 6px,transparent 11px) 0 0/34px 26px repeat-x;
+    filter:drop-shadow(0 0 6px rgba(255,200,90,.7));animation:twinkle 2.4s ease-in-out infinite}
+  .lights::before{content:"";position:absolute;left:0;right:0;top:9px;height:2px;background:#5b4330}
+  @keyframes twinkle{0%,100%{opacity:1}50%{opacity:.7}}
+  .story{font-size:17px;line-height:1.5;color:var(--ink);margin:10px auto 0;max-width:400px;word-break:keep-all}
   .badge{display:inline-block;font-size:14px;letter-spacing:2px;color:var(--hud);border:2px solid var(--line);border-radius:999px;padding:4px 12px;margin-bottom:12px}
   .overlay h1{margin:0;font-family:var(--title);font-weight:normal;font-size:clamp(36px,11vw,52px);line-height:1.08;color:var(--yellow);-webkit-text-stroke:2px #000;text-shadow:0 5px 0 #000,0 0 30px rgba(255,212,59,.35)}
   .hero{font-size:68px;margin:4px 0 8px;filter:drop-shadow(0 0 14px rgba(255,212,59,.7));animation:bob 2.6s ease-in-out infinite}
@@ -223,10 +230,10 @@
   .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:14px}
   .env{position:absolute;left:0;right:0;bottom:0;padding:0 calc(var(--sar) + 12px) calc(var(--sab) + 8px) calc(var(--sal) + 12px);font-size:12px;line-height:1.4;color:var(--dim);word-break:keep-all}
   .env .ok{color:var(--green)} .env .bad{color:var(--red)}
-  .back{position:absolute;left:calc(var(--sal) + 14px);top:calc(var(--sat) + 12px);font-size:17px;color:var(--dim);text-decoration:none}
+  .back{position:absolute;left:calc(var(--sal) + 14px);top:calc(var(--sat) + 34px);font-size:17px;color:var(--dim);text-decoration:none}
   #menu .wrap{width:100%;max-width:520px;padding-bottom:30px}
   .rooms{display:flex;gap:8px;justify-content:center;margin:12px 0 4px}
-  .chip{border:3px solid #000;border-radius:999px;background:#26305e;color:#fff;font-size:18px;padding:7px 16px;box-shadow:0 4px 0 #000;touch-action:manipulation}
+  .chip{border:3px solid #000;border-radius:999px;background:#5a3e2b;color:#fff;font-size:18px;padding:7px 16px;box-shadow:0 4px 0 #000;touch-action:manipulation}
   .chip.on{background:var(--hud);color:#000}
   .cat{font-family:var(--title);font-size:19px;color:var(--hud);text-align:left;margin:22px 4px 8px}
   .cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -275,12 +282,14 @@
 
 <section class="overlay scroll" id="menu" hidden>
   <div class="wrap">
-    <div class="badge">리얼 어몽어스 · 미션 테스트</div>
-    <h1>말랑 미션</h1>
+    <div class="lights"></div>
+    <div class="badge" style="margin-top:22px">리얼 어몽어스 · 미션 테스트</div>
+    <h1>펜션 살리기</h1>
+    <div class="story">오늘 밤 펜션이 엉망이다! 🏚️<br>크루는 펜션을 고치고, 임포스터는 몰래 망가뜨린다.</div>
     <div class="rooms" id="roomChips"></div>
     <div class="howto">
-      방마다 QR 3장을 붙여요: <b>메인 단말기</b>, 서로 떨어진 곳에 <b>A 지점</b>·<b>B 지점</b>.<br>
-      🖥️ <b>단말기 미션</b>은 QR을 카메라로 계속 비추고 있어야 작동해요.<br>
+      방마다 QR 3장을 붙여요: <b>메인 QR</b>, 서로 떨어진 곳에 <b>A 지점</b>·<b>B 지점</b>.<br>
+      📱 <b>비추기 미션</b>은 QR을 카메라로 계속 비추고 있어야 작동해요.<br>
       📍 <b>이동 미션</b>은 중간에 A·B 지점 QR을 찍어야 해요.<br>
       ⏱️ 시간 안에 못 하면 실패, 메인 QR부터 다시!
     </div>
@@ -293,6 +302,7 @@
 </section>
 
 <section class="overlay" id="intro" hidden>
+  <div class="lights"></div>
   <a class="back" id="backLink" href="#">← 미션 목록</a>
   <div class="badge" id="introCat"></div>
   <div class="hero" id="introIcon"></div>
@@ -306,7 +316,7 @@
 
 <section class="overlay glass" id="done" hidden>
   <div class="badge">MISSION COMPLETE</div>
-  <h1>미션 완료!</h1>
+  <h1>해결 완료!</h1>
   <div id="doneTime">0:00</div>
   <div class="label" id="doneName" style="margin-bottom:24px"></div>
   <button class="btn big" id="againBtn">다시 하기</button>
@@ -315,10 +325,10 @@
 
 <section class="overlay glass" id="fail" hidden>
   <div class="badge" style="color:var(--red);border-color:var(--red)">MISSION FAILED</div>
-  <div class="hero" style="animation:none">💥</div>
-  <h1>미션 실패</h1>
+  <div class="hero" style="animation:none">😵</div>
+  <h1>망했다…</h1>
   <div class="desc" id="failMsg"></div>
-  <div class="label" style="margin-bottom:22px">메인 단말기 QR부터 다시 시작해요</div>
+  <div class="label" style="margin-bottom:22px">메인 QR부터 다시 시작해요</div>
   <button class="btn big" id="retryBtn">처음부터 다시</button>
   <div class="row"><a class="btn ghost toMenu" href="#">미션 목록</a></div>
 </section>
@@ -333,10 +343,10 @@
 const QR_PREFIX = 'MALLANG-AU:room:';
 const ROOMS = [['living','거실'],['room3','침실3'],['balcony','발코니']];
 const ROOM_NAMES = Object.fromEntries(ROOMS);
-const SPOT_NAMES = { '':'메인 단말기', A:'A 지점', B:'B 지점' };
+const SPOT_NAMES = { '':'메인', A:'A 지점', B:'B 지점' };
 const VFOV = 62;
 const LOST_MS = 2000;
-const CATS = { term:'🖥️ 단말기 미션 (QR을 비춘 채로)', move:'📍 이동 미션 (A·B 지점 QR)', duo:'👥 2인 미션' };
+const CATS = { term:'📱 비추기 미션 (QR을 비춘 채로)', move:'📍 이동 미션 (A·B 지점 QR)', duo:'👥 2인 미션' };
 
 const params = new URLSearchParams(location.search);
 let room = (params.get('room') || '').trim() || null;
@@ -439,8 +449,9 @@ function renderDiag(){
 // 배경
 // ===================================================================
 const sctx = stars.getContext('2d');
-const STARS = Array.from({ length: 260 }, () => ({ yaw: Math.random()*360, pitch: Math.asin(Math.random()*2-1)*180/Math.PI,
-  r: Math.random() < .08 ? 1.8 + Math.random() : .5 + Math.random()*1.1, a: .35 + Math.random()*.65, tw: Math.random()*6.28 }));
+const GLOW = ['#ffcf6b','#ffb067','#fff1c9','#ff9a5a'];
+const STARS = Array.from({ length: 140 }, () => ({ yaw: Math.random()*360, pitch: Math.asin(Math.random()*2-1)*180/Math.PI,
+  r: Math.random() < .12 ? 2.4 + Math.random()*1.6 : .7 + Math.random()*1.3, a: .3 + Math.random()*.6, tw: Math.random()*6.28, col: GLOW[Math.floor(Math.random()*GLOW.length)] }));
 let driftYaw = 0;
 function resize(){ Core.W = innerWidth; Core.H = innerHeight; const dpr = Math.min(devicePixelRatio || 1, 2);
   stars.width = Core.W * dpr; stars.height = Core.H * dpr; sctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
@@ -453,12 +464,12 @@ function drawStars(t, dt){
   for (const s of STARS) {
     const dy = wrap180(s.yaw - vy), dp = s.pitch - vp;
     if (Math.abs(dy) > hfov*.6 || Math.abs(dp) > VFOV*.6) continue;
-    sctx.globalAlpha = s.a * (.7 + .3*Math.sin(t/600 + s.tw)); sctx.fillStyle = '#fff';
+    sctx.globalAlpha = s.a * (.55 + .45*Math.sin(t/700 + s.tw)); sctx.fillStyle = s.col;
     sctx.beginPath(); sctx.arc(W/2 + dy/hfov*W, H/2 - dp/VFOV*H, s.r, 0, 6.283); sctx.fill();
   }
   sctx.globalAlpha = 1;
 }
-// 'cam' = 카메라, 'term' = 어둡게 한 카메라(단말기), 'stars' = 우주
+// 'cam' = 카메라, 'term' = 어둡게 한 카메라(QR 비추기), 'stars' = 밤 배경
 function setBg(mode){
   const camOn = Core.camOk && mode !== 'stars';
   cam.hidden = !camOn; stars.hidden = camOn;
@@ -552,12 +563,12 @@ function makeCtx(){
       if (c.term != null) c.terminal(c.term);
       if (tipWas) showTip(tipWas);
     },
-    // 단말기: 이 지점 QR이 카메라에 보이는 동안만 조작 가능
+    // QR 비추기: 이 지점 QR이 카메라에 보이는 동안만 조작 가능
     terminal(spot){
       c.term = spot; c.seenAt = performance.now(); c.ignoreLink = false;
       setBg('term');
       if (!c.lostEl) {
-        c.lostEl = h(`<div class="lost" hidden><b>📡 신호 끊김</b><div></div><button class="btn ghost" style="margin-top:18px">QR 확인 끄기 (테스트용)</button></div>`);
+        c.lostEl = h(`<div class="lost" hidden><b>📵 연결 끊김</b><div></div><button class="btn ghost" style="margin-top:18px">QR 확인 끄기 (테스트용)</button></div>`);
         c.lostEl.querySelector('button').onclick = () => { c.ignoreLink = true; };
         el.appendChild(c.lostEl);
       }
@@ -573,7 +584,7 @@ function makeCtx(){
     const ok = c.linked();
     if (c.lostEl && c.lostEl.hidden !== ok) { c.lostEl.hidden = ok; if (!ok) sfx.wrong(); }
     linkEl.className = ok ? '' : 'off';
-    linkEl.textContent = ok ? (c.ignoreLink || !Core.camOk ? '⚪ QR 확인 꺼짐' : `🟢 ${SPOT_NAMES[c.term]} 연결`) : '🔴 신호 끊김';
+    linkEl.textContent = ok ? (c.ignoreLink || !Core.camOk ? '⚪ QR 확인 꺼짐' : `🟢 ${SPOT_NAMES[c.term]} QR 연결`) : '🔴 연결 끊김';
   });
   return c;
 }
@@ -632,15 +643,15 @@ function holdButton(label){
 const MISSIONS = [];
 const M = m => MISSIONS.push(m);
 
-// ---------- 🖥️ 배선 연결 ----------
-M({ id:'wires', cat:'term', icon:'🔌', name:'배선 연결', needs:[], limit:30,
-  desc:'같은 색 전선 6가닥을 왼쪽에서 오른쪽으로 끌어서 이어 주세요.',
-  rules:['🖥️ 메인 단말기 QR을 비춘 채로', '⏱️ 30초'],
+// ---------- 📱 두꺼비집 고치기 (배선) ----------
+M({ id:'wires', cat:'term', icon:'⚡', name:'두꺼비집 고치기', needs:[], limit:30,
+  desc:'정전이다! 두꺼비집의 같은 색 전선 6가닥을 끌어서 이어 불을 살리세요.',
+  rules:['📱 메인 QR을 비춘 채로', '⏱️ 30초'],
   start(c){
     c.terminal('');
     const COLORS = ['#ff4d4d','#ff9f1a','#ffe14d','#3ddc84','#3d8bff','#b45cff'];
     const N = COLORS.length;
-    const x = c.center(`<div class="panel"><div class="lcd">전선 ${N}가닥을 이으세요</div><div class="wires"><svg></svg></div></div>`);
+    const x = c.center(`<div class="panel"><div class="lcd">⚡ 정전! 전선 ${N}가닥을 이으세요</div><div class="wires"><svg></svg></div></div>`);
     const box = x.querySelector('.wires'), svg = x.querySelector('svg'), lcd = x.querySelector('.lcd');
     const lOrder = shuffle([...Array(N).keys()]), rOrder = shuffle([...Array(N).keys()]);
     const L = [], R = [];
@@ -670,7 +681,7 @@ M({ id:'wires', cat:'term', icon:'🔌', name:'배선 연결', needs:[], limit:3
       if (tgt && tgt.c === act.n.c && !tgt.done) {
         const p = pt(tgt.el, 'r'); act.ln.setAttribute('x2', p.x); act.ln.setAttribute('y2', p.y);
         act.n.done = tgt.done = true; act.n.el.classList.add('on'); tgt.el.classList.add('on');
-        got++; sfx.ok(got); c.progress(got, N); lcd.textContent = got < N ? `연결됨 ${got} / ${N}` : '전력 복구 완료!'; lcd.className = 'lcd';
+        got++; sfx.ok(got); c.progress(got, N); lcd.textContent = got < N ? `연결됨 ${got} / ${N}` : '불 들어왔다! 💡'; lcd.className = 'lcd';
         if (got === N) c.later(() => c.done(), 500);
       } else {
         act.ln.remove();
@@ -678,14 +689,14 @@ M({ id:'wires', cat:'term', icon:'🔌', name:'배선 연결', needs:[], limit:3
       }
       act = null;
     });
-    c.tip('폰으로 QR을 비춘 채 조작하세요');
+    c.tip('QR을 비춘 채 조작하세요');
   }
 });
 
-// ---------- 🖥️ 숫자 기억 ----------
-M({ id:'numbers', cat:'term', icon:'🔢', name:'숫자 기억', needs:[], limit:60,
-  desc:'1~15 위치를 4초 동안 외우세요. 숫자가 가려지면 1부터 순서대로 누르세요.',
-  rules:['🖥️ 메인 단말기 QR을 비춘 채로', '❌ 틀리면 숫자를 잠깐 다시 보여줘요 (시간 손해)', '⏱️ 60초'],
+// ---------- 📱 도어락 열기 (숫자 기억) ----------
+M({ id:'numbers', cat:'term', icon:'🔐', name:'도어락 열기', needs:[], limit:60,
+  desc:'도어락이 고장! 숫자 1~15 위치를 4초 동안 외우고, 가려지면 1부터 순서대로 누르세요.',
+  rules:['📱 메인 QR을 비춘 채로', '❌ 틀리면 숫자를 잠깐 다시 보여줘요 (시간 손해)', '⏱️ 60초'],
   start(c){
     c.terminal('');
     const N = 15;
@@ -700,7 +711,7 @@ M({ id:'numbers', cat:'term', icon:'🔢', name:'숫자 기억', needs:[], limit
         if (showing || t.classList.contains('ok')) return;
         if (n === next) {
           t.classList.remove('hid'); t.classList.add('ok'); sfx.ok(n); c.progress(n, N); next++;
-          lcd.textContent = next > N ? '잠금 해제!' : `다음: ${next}`; lcd.className = 'lcd';
+          lcd.textContent = next > N ? '띠리릭~ 문 열림! 🚪' : `다음: ${next}`; lcd.className = 'lcd';
           if (next > N) c.later(() => c.done(), 500);
         } else { sfx.wrong(); bump(grid); lcd.textContent = '틀렸어요! 다시 보여줄게요'; lcd.className = 'lcd err'; reveal(1500); }
       });
@@ -713,14 +724,14 @@ M({ id:'numbers', cat:'term', icon:'🔢', name:'숫자 기억', needs:[], limit
     const iv = setInterval(() => { cd--; if (cd > 0) { lcd.textContent = `외우세요! ${cd}`; tone(800, 0, .05, 'sine', .06); } else clearInterval(iv); }, 1000);
     c.addCleanup(() => clearInterval(iv));
     reveal(4000);
-    c.progress(0, N); c.tip('폰으로 QR을 비춘 채 조작하세요');
+    c.progress(0, N); c.tip('QR을 비춘 채 조작하세요');
   }
 });
 
-// ---------- 🖥️ 패턴 기억 ----------
-M({ id:'pattern', cat:'term', icon:'💡', name:'패턴 기억', needs:[],
-  desc:'불이 켜지는 순서를 보고 똑같이 누르세요. 7단계, 갈수록 빨라져요.',
-  rules:['🖥️ 메인 단말기 QR을 비춘 채로', '❌ 3번 틀리면 실패'],
+// ---------- 📱 노래방 예약 (패턴 기억) ----------
+M({ id:'pattern', cat:'term', icon:'🎤', name:'노래방 예약', needs:[],
+  desc:'노래방 기계가 먹통! 리모컨 버튼이 켜지는 순서를 보고 똑같이 누르세요. 7단계, 갈수록 빨라져요.',
+  rules:['📱 메인 QR을 비춘 채로', '❌ 3번 틀리면 실패'],
   start(c){
     c.terminal('');
     const ROUNDS = 7, MAXERR = 3;
@@ -744,30 +755,30 @@ M({ id:'pattern', cat:'term', icon:'💡', name:'패턴 기억', needs:[],
       if (i !== seq[input]) {
         errs++; lives.textContent = '❤️'.repeat(MAXERR - errs) + '🖤'.repeat(errs);
         sfx.wrong(); bump(grid); lockAll(true); playing = true;
-        if (errs >= MAXERR) { lcd.textContent = '시스템 다운…'; lcd.className = 'lcd err'; c.later(() => c.fail('3번 틀렸어요'), 600); return; }
+        if (errs >= MAXERR) { lcd.textContent = '노래방 기계 꺼짐…'; lcd.className = 'lcd err'; c.later(() => c.fail('3번 틀렸어요'), 600); return; }
         lcd.textContent = '틀렸어요! 다시 보여줄게요'; lcd.className = 'lcd err'; c.later(play, 1000); return;
       }
       input++;
       if (input === round) {
         dots[round-1].classList.add('on'); c.progress(round, ROUNDS);
-        if (round === ROUNDS) { lockAll(true); lcd.textContent = '시스템 정상!'; c.later(() => c.done(), 600); return; }
+        if (round === ROUNDS) { lockAll(true); lcd.textContent = '반주 시작! 🎶'; c.later(() => c.done(), 600); return; }
         round++; lockAll(true); playing = true; c.later(play, 600);
       }
     }));
-    c.progress(0, ROUNDS); c.tip('폰으로 QR을 비춘 채 조작하세요');
+    c.progress(0, ROUNDS); c.tip('QR을 비춘 채 조작하세요');
     play();
   }
 });
 
-// ---------- 🖥️ 카드 긁기 ----------
-M({ id:'card', cat:'term', icon:'💳', name:'카드 긁기', needs:[], limit:40,
-  desc:'카드를 0.6~0.9초 속도로 끝까지 긁으세요. 3번 연속 성공해야 해요.',
-  rules:['🖥️ 메인 단말기 QR을 비춘 채로', '❌ 한 번 실패하면 연속 기록 0', '⏱️ 40초'],
+// ---------- 📱 카드키 긁기 ----------
+M({ id:'card', cat:'term', icon:'🔑', name:'카드키 긁기', needs:[], limit:40,
+  desc:'방 카드키가 안 먹혀요! 0.6~0.9초 속도로 끝까지 긁어서 3번 연속 성공하세요.',
+  rules:['📱 메인 QR을 비춘 채로', '❌ 한 번 실패하면 연속 기록 0', '⏱️ 40초'],
   start(c){
     c.terminal('');
     const NEED = 3;
-    const x = c.center(`<div class="panel"><div class="dots">${'<i></i>'.repeat(NEED)}</div><div class="lcd">카드를 오른쪽으로 긁으세요</div>
-      <div class="slot"><div class="card"><b>말랑 우주선</b><div class="chip"></div><small>CREW ID · 0427</small></div></div>
+    const x = c.center(`<div class="panel"><div class="dots">${'<i></i>'.repeat(NEED)}</div><div class="lcd">카드키를 오른쪽으로 긁으세요</div>
+      <div class="slot"><div class="card"><b>말랑 펜션</b><div class="chip"></div><small>ROOM KEY · 203호</small></div></div>
       <div class="label">적당한 속도로 한 번에 쭉~</div></div>`);
     const slot = x.querySelector('.slot'), card = x.querySelector('.card'), lcd = x.querySelector('.lcd'), dots = x.querySelectorAll('.dots i');
     let drag = null, streak = 0, ok = false;
@@ -788,30 +799,30 @@ M({ id:'card', cat:'term', icon:'💳', name:'카드 긁기', needs:[], limit:40
         else if (dt > 0.9) miss(`너무 느려요 (${dt.toFixed(2)}초)`);
         else {
           streak++; setDots(); c.progress(streak, NEED); sfx.ok(streak);
-          if (streak >= NEED) { ok = true; msg('승인됨 ✔'); c.later(() => c.done(), 600); }
+          if (streak >= NEED) { ok = true; msg('철컥! 문 열림 ✔'); c.later(() => c.done(), 600); }
           else { msg(`좋아요! (${dt.toFixed(2)}초) ${NEED - streak}번 더`); back(); }
         }
       }
     });
     const up = () => { if (!drag) return; drag = null; miss('끝까지 긁어 주세요'); };
     card.addEventListener('pointerup', up); card.addEventListener('pointercancel', up);
-    c.progress(0, NEED); c.tip('폰으로 QR을 비춘 채 조작하세요');
+    c.progress(0, NEED); c.tip('QR을 비춘 채 조작하세요');
   }
 });
 
-// ---------- 🖥️ 의료 스캔 (A 지점 단말기) ----------
-M({ id:'scan', cat:'term', icon:'🩺', name:'의료 스캔', needs:['motion'],
-  desc:'A 지점 스캐너로 가서, QR을 비추고 손가락을 댄 채 15초 동안 가만히 있으세요.',
-  rules:['📍 A 지점으로 이동', '🖥️ A 지점 QR을 비춘 채로', '❌ 움직이거나 손을 떼거나 QR을 놓치면 0초부터'],
+// ---------- 📱 발열 체크 (A 지점 QR 비추기) ----------
+M({ id:'scan', cat:'term', icon:'🌡️', name:'발열 체크', needs:['motion'],
+  desc:'체온계(A 지점)로 가서, QR을 비추고 손가락을 댄 채 15초 동안 가만히 있으세요.',
+  rules:['📍 A 지점으로 이동', '📱 A 지점 QR을 비춘 채로', '❌ 움직이거나 손을 떼거나 QR을 놓치면 0초부터'],
   async start(c){
-    await c.checkpoint('A', '스캐너로 이동');
+    await c.checkpoint('A', '체온계로 이동');
     if (c.finished) return;
     c.terminal('A');
     const DUR = 15;
     const x = c.center(`<div class="panel"><div class="scanbody"><div class="who">🧍</div><div class="bar"></div></div>
       <div class="readout"></div><div class="hand">🖐️</div><div class="label">손가락을 대고 있는 동안 스캔해요</div></div>`);
     const body = x.querySelector('.scanbody'), hand = x.querySelector('.hand'), ro = x.querySelector('.readout');
-    const LINES = ['ID: 말랑 크루원', '키: 측정 완료', '체중: 측정 완료', '혈액형: 우주형', '심박: 정상', '결과: 이상 없음 ✔'];
+    const LINES = ['이름: 펜션 손님', '체온: 36.5℃', '취기: 살짝 있음 🍺', '피곤함: 높음', '심박: 정상', '결과: 놀아도 됨 ✔'];
     let held = false, p = 0, lastWarn = 0, finishing = false;
     const reset = t => { if (p > 0.03) { const n = performance.now(); if (n - lastWarn > 700) { lastWarn = n; sfx.wrong(); bump(body); c.tip(t, true); } } p = 0; };
     const on = e => { e.preventDefault(); held = true; hand.classList.add('on'); body.classList.add('run'); };
@@ -831,13 +842,13 @@ M({ id:'scan', cat:'term', icon:'🩺', name:'의료 스캔', needs:['motion'],
   }
 });
 
-// ---------- 📍 엔진 시동 (신호 흔들기, 메인→A) ----------
-M({ id:'shake', cat:'move', icon:'🫨', name:'엔진 시동', needs:['motion'], limit:60,
-  desc:'🟢 초록불에만 폰을 흔들어 엔진을 채우세요. 🔴 빨간불에 흔들면 확 줄어요! 메인 엔진 → A 지점 보조 엔진.',
+// ---------- 📍 샴페인 흔들기 (신호등, 메인→A) ----------
+M({ id:'shake', cat:'move', icon:'🍾', name:'샴페인 흔들기', needs:['motion'], limit:60,
+  desc:'건배 준비! 🟢 초록불에만 폰을 흔들어 샴페인 압력을 채우세요. 🔴 빨간불에 흔들면 김이 빠져요! 메인 → A 지점 두 번째 병.',
   rules:['📍 메인 → A 지점', '⏱️ 60초 (이동 중엔 멈춤)'],
   async start(c){
     for (let phase = 1; phase <= 2; phase++) {
-      if (phase === 2) { await c.checkpoint('A', '보조 엔진으로 이동'); if (c.finished) return; }
+      if (phase === 2) { await c.checkpoint('A', '두 번째 샴페인으로 이동'); if (c.finished) return; }
       await shakePhase(c, phase);
       if (c.finished) return;
     }
@@ -846,7 +857,7 @@ M({ id:'shake', cat:'move', icon:'🫨', name:'엔진 시동', needs:['motion'],
 });
 function shakePhase(c, phase){
   return new Promise(resolve => {
-    const x = c.center(`<div class="panel"><div class="lcd">${phase === 1 ? '메인 엔진' : '보조 엔진'} 시동</div><div class="light"></div><div class="engine">🚀</div>
+    const x = c.center(`<div class="panel"><div class="lcd">${phase === 1 ? '첫 번째' : '두 번째'} 샴페인</div><div class="light"></div><div class="engine">🍾</div>
       <div class="gauge" style="margin-top:10px"><i></i></div><div class="meter"><i></i></div><div class="label">얇은 줄 = 지금 흔드는 세기</div><div class="alt"></div></div>`);
     const eng = x.querySelector('.engine'), g = x.querySelector('.gauge i'), meter = x.querySelector('.meter i'), lcd = x.querySelector('.lcd'), light = x.querySelector('.light'), alt = x.querySelector('.alt');
     let p = 0, inten = 0, go = true, nextSwitch = performance.now() + rand(1800, 3500), lastBuzz = 0, over = false;
@@ -869,15 +880,15 @@ function shakePhase(c, phase){
       const s = clamp(inten / 4, 0, 8); eng.style.transform = `translate(${rand(-s,s)}px,${rand(-s,s)}px) rotate(${rand(-s,s)/2}deg)`;
       c.gauge((phase - 1 + p) / 2, `${phase}/2`);
       if (inten > 6 && t - lastBuzz > 120) { lastBuzz = t; tone(60 + p * 200, 0, .1, 'sawtooth', .04); }
-      if (p >= 1) { over = true; sfx.ok(5); lcd.textContent = '시동 완료! 🔥'; lcd.className = 'lcd'; setTimeout(() => { x.remove(); resolve(); }, 600); }
+      if (p >= 1) { over = true; sfx.ok(5); lcd.textContent = '펑! 🎉'; lcd.className = 'lcd'; setTimeout(() => { x.remove(); resolve(); }, 600); }
     });
-    c.tip('초록불에만 흔들기!');
+    c.tip('초록불에만 흔들기! 빨간불엔 멈춤');
   });
 }
 
-// ---------- 📍 기울기 미로 (구멍, →B) ----------
-M({ id:'maze', cat:'move', icon:'🎱', name:'기울기 미로', needs:['motion'], limit:75,
-  desc:'폰을 기울여 공을 출구까지 굴리세요. 검은 구멍에 빠지면 처음 자리로! 탈출하면 B 지점에서 결과 전송.',
+// ---------- 📍 계란 굴리기 (기울기 미로, 구멍, →B) ----------
+M({ id:'maze', cat:'move', icon:'🍳', name:'계란 굴리기', needs:['motion'], limit:75,
+  desc:'아침 준비! 폰을 기울여 계란을 접시🍽️까지 굴리세요. 구멍에 빠지면 깨져서 처음부터! 도착하면 B 지점 식탁에 내려놓기.',
   rules:['📍 끝나면 B 지점', '⏱️ 75초 (이동 중엔 멈춤)'],
   async start(c){
     const CW = 7, CH = 9, TW = CW*2+1, TH = CH*2+1;
@@ -914,14 +925,14 @@ M({ id:'maze', cat:'move', icon:'🎱', name:'기울기 미로', needs:['motion'
     c.listen(window, 'pointerup', e => { if (dd && e.pointerId === dd.id) { dd = null; vt = { x:0, y:0 }; } });
     const solid = (px, py) => { for (let ty = Math.floor(py-HB); ty <= Math.floor(py+HB-1e-6); ty++) for (let tx = Math.floor(px-HB); tx <= Math.floor(px+HB-1e-6); tx++) if (!grid[ty] || grid[ty][tx] !== 0) return true; return false; };
     function draw(t){
-      g.fillStyle = '#0b1230'; g.fillRect(0, 0, TW*T, TH*T);
-      for (let y = 0; y < TH; y++) for (let xx = 0; xx < TW; xx++) if (grid[y][xx]) { g.fillStyle = '#2b3a7a'; g.fillRect(xx*T, y*T, T, T); g.fillStyle = '#3d52a8'; g.fillRect(xx*T, y*T, T, Math.max(2, T*.18)); }
+      g.fillStyle = '#2b2b30'; g.fillRect(0, 0, TW*T, TH*T);
+      for (let y = 0; y < TH; y++) for (let xx = 0; xx < TW; xx++) if (grid[y][xx]) { g.fillStyle = '#7a5236'; g.fillRect(xx*T, y*T, T, T); g.fillStyle = '#9a6b47'; g.fillRect(xx*T, y*T, T, Math.max(2, T*.18)); }
       holes.forEach(k => { const [a,b] = k.split(',').map(Number); g.beginPath(); g.arc(a*T+T/2, b*T+T/2, T*.42, 0, 6.283); g.fillStyle = '#000'; g.fill(); g.lineWidth = 2; g.strokeStyle = '#ff5c7a'; g.stroke(); });
-      g.fillStyle = `rgba(92,255,176,${.55 + .35*Math.sin(t/200)})`; g.fillRect(gx*T+2, gy*T+2, T-4, T-4);
+      g.fillStyle = `rgba(255,243,220,${.75 + .25*Math.sin(t/200)})`; g.fillRect(gx*T+2, gy*T+2, T-4, T-4); g.font = `${T*.8}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('🍽️', gx*T+T/2, gy*T+T/2+1);
       const r = T*HB*1.15*(fallAnim > 0 ? fallAnim : 1);
-      g.beginPath(); g.arc(ball.x*T, ball.y*T, Math.max(1, r), 0, 6.283); g.fillStyle = '#ffd43b'; g.fill(); g.lineWidth = 3; g.strokeStyle = '#000'; g.stroke();
+      g.beginPath(); g.ellipse(ball.x*T, ball.y*T, Math.max(1, r), Math.max(1, r*1.18), 0, 0, 6.283); g.fillStyle = '#fffaf0'; g.fill(); g.lineWidth = 2.5; g.strokeStyle = '#000'; g.stroke();
     }
-    c.progress(0, 1, '탈출');
+    c.progress(0, 1, '접시');
     await new Promise(resolve => {
       c.onFrame((t, dt) => {
         if (won) return;
@@ -939,24 +950,24 @@ M({ id:'maze', cat:'move', icon:'🎱', name:'기울기 미로', needs:['motion'
           const ny = ball.y + ball.vy * dt / steps; if (solid(ball.x, ny)) ball.vy *= -0.25; else ball.y = ny;
         }
         if (holes.has(key(Math.floor(ball.x), Math.floor(ball.y))) && Math.hypot(ball.x - Math.floor(ball.x) - .5, ball.y - Math.floor(ball.y) - .5) < 0.3) {
-          falls++; fallAnim = 1; sfx.wrong(); lab.textContent = `구멍에 빠졌어요! (${falls}번)`;
+          falls++; fallAnim = 1; sfx.wrong(); lab.textContent = `계란이 깨졌어요! 🥚💥 (${falls}번)`;
           ball.x = Math.floor(ball.x) + .5; ball.y = Math.floor(ball.y) + .5;
         }
         draw(t);
-        if (Math.floor(ball.x) === gx && Math.floor(ball.y) === gy) { won = true; sfx.ok(4); c.progress(1, 1, '탈출'); lab.textContent = '탈출 성공!'; setTimeout(resolve, 500); }
+        if (Math.floor(ball.x) === gx && Math.floor(ball.y) === gy) { won = true; sfx.ok(4); c.progress(1, 1, '접시'); lab.textContent = '접시 도착! 🍳'; setTimeout(resolve, 500); }
       });
       c.tip('바닥과 평평하게 들면 더 쉬워요');
     });
     if (c.finished) return;
     x.remove();
-    await c.checkpoint('B', '결과 전송');
+    await c.checkpoint('B', '식탁에 내려놓기');
     c.done();
   }
 });
 
-// ---------- 📍 산소 공급 (적정 세기 유지, 메인→A) ----------
-M({ id:'blow', cat:'move', icon:'🌬️', name:'산소 공급', needs:['mic'], limit:60,
-  desc:'마이크에 바람을 불어 세기를 초록 칸 안에 맞추세요. 칸 안에 있을 때만 탱크가 차요. 너무 세도 안 돼요! 탱크 2개: 메인 → A 지점.',
+// ---------- 📍 숯불 살리기 (마이크 적정 세기, 메인→A) ----------
+M({ id:'blow', cat:'move', icon:'🔥', name:'숯불 살리기', needs:['mic'], limit:60,
+  desc:'바비큐 숯불이 꺼져 가요! 마이크에 바람을 불어 세기를 초록 칸 안에 맞추세요. 칸 안일 때만 불이 살아나요. 너무 세면 재가 날려요! 그릴 2개: 메인 → A 지점.',
   rules:['📍 메인 → A 지점', '⏱️ 60초 (이동 중엔 멈춤)'],
   async start(c){
     let an = null, buf = null;
@@ -964,15 +975,15 @@ M({ id:'blow', cat:'move', icon:'🌬️', name:'산소 공급', needs:['mic'], 
       try { const src = actx.createMediaStreamSource(Core.micStream); an = actx.createAnalyser(); an.fftSize = 1024; src.connect(an); buf = new Float32Array(an.fftSize); c.addCleanup(() => { try { src.disconnect(); } catch(e){} }); } catch(e) { an = null; }
     }
     for (let tank = 1; tank <= 2; tank++) {
-      if (tank === 2) { await c.checkpoint('A', '두 번째 탱크로 이동'); if (c.finished) return; }
+      if (tank === 2) { await c.checkpoint('A', '두 번째 그릴로 이동'); if (c.finished) return; }
       await new Promise(resolve => {
-        const x = c.center(`<div class="panel"><div class="lcd">탱크 ${tank} / 2 · 초록 칸 안에 맞추세요</div>
-          <div class="o2"><div class="vbar"><div class="band"></div><div class="lv"></div></div><div class="tank"><i></i><b>0%</b></div></div><div class="alt"></div></div>`);
+        const x = c.center(`<div class="panel"><div class="lcd">그릴 ${tank} / 2 · 초록 칸 안으로 후~</div>
+          <div class="o2"><div class="vbar"><div class="band"></div><div class="lv"></div></div><div class="tank"><i></i><b>🔥0%</b></div></div><div class="alt"></div></div>`);
         const vbar = x.querySelector('.vbar'), band = x.querySelector('.band'), lv = x.querySelector('.lv'), fill = x.querySelector('.tank i'), pct = x.querySelector('.tank b'), alt = x.querySelector('.alt');
         let p = 0, level = 0, hb = null, over = false, bandC = rand(0.35, 0.6);
         const BW = 0.22;
         if (!an) { hb = holdButton('마이크 대신: 꾹 누르기 (떼면 내려가요)'); alt.appendChild(hb); c.tip(`마이크를 못 써요 (${Core.micResult}). 버튼으로 칸을 맞추세요`, true); }
-        else c.tip(tank === 1 ? '세게 불면 칸을 넘어가요. 일정하게 후~' : '이번엔 칸이 움직여요!');
+        else c.tip(tank === 1 ? '세게 불면 칸을 넘어가요. 일정하게 후~' : '바람 부는 그릴! 칸이 움직여요');
         c.onFrame((t, dt) => {
           if (over) return;
           if (an) {
@@ -985,7 +996,7 @@ M({ id:'blow', cat:'move', icon:'🌬️', name:'산소 공급', needs:['mic'], 
           band.style.bottom = (lo*100) + '%'; band.style.height = (BW*100) + '%';
           lv.style.bottom = (level*100) + '%'; vbar.classList.toggle('in', inside);
           p = clamp(p + (inside ? dt / 4 : -dt * 0.05), 0, 1);
-          fill.style.height = (p*100) + '%'; pct.textContent = Math.floor(p*100) + '%';
+          fill.style.height = (p*100) + '%'; pct.textContent = '🔥' + Math.floor(p*100) + '%';
           c.gauge((tank - 1 + p) / 2, `${tank}/2`);
           if (p >= 1) { over = true; sfx.ok(5); setTimeout(() => { x.remove(); resolve(); }, 500); }
         });
@@ -996,9 +1007,9 @@ M({ id:'blow', cat:'move', icon:'🌬️', name:'산소 공급', needs:['mic'], 
   }
 });
 
-// ---------- 📍 안테나 정렬 (AR, →B) ----------
-M({ id:'antenna', cat:'move', icon:'📡', name:'안테나 정렬', needs:['cam','motion'], ar:true, limit:60,
-  desc:'방 안 어딘가의 신호 3개를 찾아 조준점 안에 2초씩 붙잡으세요. 신호는 조금씩 움직여요. 다 맞추면 B 지점에서 송신!',
+// ---------- 📍 와이파이 잡기 (AR, →B) ----------
+M({ id:'antenna', cat:'move', icon:'📶', name:'와이파이 잡기', needs:['cam','motion'], ar:true, limit:60,
+  desc:'펜션 와이파이가 안 터져요! 방 안 어딘가 떠다니는 신호 3개를 찾아 조준점 안에 2초씩 붙잡으세요. 다 잡으면 B 지점 공유기 재부팅!',
   rules:['📍 끝나면 B 지점', '⏱️ 60초 (이동 중엔 멈춤)'],
   async start(c){
     const v = arView(c), N = 3, HOLD = 2;
@@ -1009,7 +1020,7 @@ M({ id:'antenna', cat:'move', icon:'📡', name:'안테나 정렬', needs:['cam'
     let orbEl = null, orb = null;
     const spawn = () => { orbEl && orbEl.remove(); orbEl = h(`<div class="orb"><div class="in">📶</div></div>`); c.el.appendChild(orbEl); orb = { yaw: v.base + offs[idx], pitch: rand(-8, 22), vy: rand(4, 8) * (Math.random() < .5 ? -1 : 1), t: 0 }; };
     spawn(); c.progress(0, N, '신호');
-    const tipNow = () => c.tip(v.drag ? v.dragTip : '노란 화살표 쪽으로 몸을 돌려 신호를 조준점에!', v.drag);
+    const tipNow = () => c.tip(v.drag ? v.dragTip : '화살표 쪽으로 몸을 돌려 와이파이 신호를 조준점에!', v.drag);
     c.onSwitch = () => { tipNow(); orb.yaw = v.base + offs[idx]; }; tipNow();
     await new Promise(resolve => {
       c.onFrame((t, dt) => {
@@ -1025,25 +1036,25 @@ M({ id:'antenna', cat:'move', icon:'📡', name:'안테나 정렬', needs:['cam'
         ring.setAttribute('stroke-dashoffset', 327 * (1 - hold / HOLD));
         if (inside && t - last > 250) { last = t; tone(600 + hold * 300, 0, .05, 'sine', .06); }
         if (hold >= HOLD) {
-          idx++; hold = 0; sfx.ok(idx); popText(c.el, Core.W/2, Core.H/2 - 60, '정렬!'); c.progress(idx, N, '신호');
+          idx++; hold = 0; sfx.ok(idx); popText(c.el, Core.W/2, Core.H/2 - 60, '신호 잡음!'); c.progress(idx, N, '신호');
           if (idx >= N) { orbEl.remove(); arrowEl.hidden = true; setTimeout(resolve, 400); } else spawn();
         }
       });
     });
     if (c.finished) return;
     cross.remove();
-    await c.checkpoint('B', '신호 송신');
+    await c.checkpoint('B', '공유기 재부팅');
     c.done();
   }
 });
 
-// ---------- 📍 우주 쓰레기 (AR, 위험물, →A 수거함) ----------
-M({ id:'junk', cat:'move', icon:'🛰️', name:'우주 쓰레기 줍기', needs:['cam','motion'], ar:true, limit:60,
-  desc:'둘러보며 노란 쓰레기 8개를 주우세요. 🔴 빨간 위험물을 건드리면 하나를 잃어요! 다 주우면 A 지점 수거함에 버려요.',
-  rules:['📍 끝나면 A 지점(수거함)', '⏱️ 60초 (이동 중엔 멈춤)'],
+// ---------- 📍 분리수거 (AR, 만지면 안 되는 것, →A 쓰레기통) ----------
+M({ id:'junk', cat:'move', icon:'🗑️', name:'분리수거', needs:['cam','motion'], ar:true, limit:60,
+  desc:'어젯밤 파티 흔적! 둘러보며 노란 쓰레기 8개를 주우세요. 🔴 빨간 건 만지면 안 돼요(벌레·남의 양말)! 하나를 떨어뜨려요. 다 주우면 A 지점 쓰레기통에 버리기.',
+  rules:['📍 끝나면 A 지점(쓰레기통)', '⏱️ 60초 (이동 중엔 멈춤)'],
   async start(c){
     const v = arView(c), N = 8;
-    const EM = ['🛰️','🔩','🥫','⚙️','🪫','📡','🧲','🔧'], HZ = ['☢️','🧨','🦠'];
+    const EM = ['🥤','🥫','🍺','📦','🍕','🧃','🍜','🥡'], HZ = ['🪳','🧦','🐛'];
     const items = []; let got = 0;
     await new Promise(resolve => {
       const make = (emo, off, pitch, haz, moving) => {
@@ -1053,7 +1064,7 @@ M({ id:'junk', cat:'move', icon:'🛰️', name:'우주 쓰레기 줍기', needs
         el.addEventListener('pointerup', () => {
           if (v.moved > 14 || j.got || c.finished || got >= N) return;
           if (j.haz) {
-            sfx.wrong(); bump(el.querySelector('.emo')); popText(c.el, j.x, j.y - 30, got > 0 ? '-1 위험물!' : '위험물!', true);
+            sfx.wrong(); bump(el.querySelector('.emo')); popText(c.el, j.x, j.y - 30, got > 0 ? '으악! -1' : '으악!', true);
             if (got > 0) { got--; c.progress(got, N); const back = items.find(o => o.got && !o.haz); if (back) { back.got = false; back.el.classList.remove('got'); c.el.appendChild(back.el); } }
             return;
           }
@@ -1066,7 +1077,7 @@ M({ id:'junk', cat:'move', icon:'🛰️', name:'우주 쓰레기 줍기', needs
       shuffle(EM.slice()).forEach((e, i) => make(e, i * 45 + rand(-15, 15), rand(-15, 22), false, i % 4 === 1));
       HZ.forEach((e, i) => make(e, i * 120 + rand(10, 50), rand(-10, 25), true, true));
       c.progress(0, N);
-      const tipNow = () => c.tip(v.drag ? v.dragTip + ', 노란 것만 터치!' : '노란 것만 주워요. 빨간 건 위험물!', v.drag);
+      const tipNow = () => c.tip(v.drag ? v.dragTip + ', 노란 것만 터치!' : '노란 것만 주워요. 빨간 건 만지지 마세요!', v.drag);
       c.onSwitch = tipNow; tipNow();
       c.onFrame((t, dt) => {
         v.update();
@@ -1084,23 +1095,23 @@ M({ id:'junk', cat:'move', icon:'🛰️', name:'우주 쓰레기 줍기', needs
     });
     if (c.finished) return;
     items.forEach(j => j.el.remove());
-    await c.checkpoint('A', '수거함에 버리기', `<b style="color:var(--yellow)">${esc(spotLabel('A'))}</b>(수거함) QR을 찍으세요`);
+    await c.checkpoint('A', '쓰레기통에 버리기', `<b style="color:var(--yellow)">${esc(spotLabel('A'))}</b>(쓰레기통) QR을 찍으세요`);
     c.done();
   }
 });
 
-// ---------- 📍 소행성 파괴 (AR, 2웨이브, B 재장전) ----------
-M({ id:'asteroids', cat:'move', icon:'☄️', name:'소행성 파괴', needs:['cam','motion'], ar:true,
-  desc:'조준점에 소행성을 맞추고 화면을 탭해서 쏘세요. 1웨이브 10개(25초) → B 지점에서 재장전 → 2웨이브 10개(25초).',
-  rules:['📍 메인 → B 지점(재장전)', '⏱️ 웨이브마다 25초'],
+// ---------- 📍 모기 잡기 (AR, 2회차, B 파리채 충전) ----------
+M({ id:'asteroids', cat:'move', icon:'🦟', name:'모기 잡기', needs:['cam','motion'], ar:true,
+  desc:'잠 못 자게 하는 모기떼! 조준점에 모기를 맞추고 화면을 탭해서 잡으세요. 1차 10마리(25초) → B 지점에서 전기 파리채 충전 → 2차 10마리(25초).',
+  rules:['📍 메인 → B 지점(파리채 충전)', '⏱️ 회차마다 25초'],
   async start(c){
     const v = arView(c), PER = 10, ALIVE = 3;
     const cross = h(`<div class="cross"><i></i></div>`); c.el.appendChild(cross);
     let rocks = [], hit = 0, wave = 1, armed = false;
-    const tipNow = () => c.tip(v.drag ? v.dragTip + ', 탭해서 발사!' : '조준점(가운데)을 맞추고 아무 데나 탭!', v.drag);
+    const tipNow = () => c.tip(v.drag ? v.dragTip + ', 탭해서 잡기!' : '조준점(가운데)에 모기를 맞추고 아무 데나 탭!', v.drag);
     c.onSwitch = tipNow;
     function spawn(){
-      const el = h(`<div class="rock"><div class="emo">${Math.random() < .5 ? '☄️' : '🪨'}</div></div>`); c.el.appendChild(el);
+      const el = h(`<div class="rock"><div class="emo">🦟</div></div>`); c.el.appendChild(el);
       rocks.push({ el, yaw: v.yaw + rand(-60, 60), pitch: rand(-12, 28), vy: rand(10, 20) * (Math.random() < .5 ? -1 : 1), vp: rand(-5, 5), dead:false, x:0, y:0 });
     }
     c.listen(c.el, 'pointerup', () => {
@@ -1110,7 +1121,7 @@ M({ id:'asteroids', cat:'move', icon:'☄️', name:'소행성 파괴', needs:['
       let best = null, bd = 56;
       for (const r of rocks) { if (r.dead) continue; const d = Math.hypot(r.x - Core.W/2, r.y - Core.H/2); if (d < bd) { bd = d; best = r; } }
       if (!best) return;
-      best.dead = true; best.el.classList.add('boom'); sfx.boom(); popText(c.el, best.x, best.y - 30, '💥'); const bel = best.el; setTimeout(() => bel.remove(), 500);
+      best.dead = true; best.el.classList.add('boom'); sfx.boom(); popText(c.el, best.x, best.y - 30, '찰싹!'); const bel = best.el; setTimeout(() => bel.remove(), 500);
       hit++; c.progress(hit, PER * 2);
       if (hit >= PER * wave) { armed = false; return; }
       if (rocks.filter(r => !r.dead).length < Math.min(ALIVE, PER * wave - hit)) setTimeout(spawn, 350);
@@ -1120,6 +1131,7 @@ M({ id:'asteroids', cat:'move', icon:'☄️', name:'소행성 파괴', needs:['
       let nearest = null, nd = Infinity, any = false, hot = false;
       for (const r of rocks) {
         if (r.dead) continue;
+        if (Math.random() < dt * 0.8) { r.vy = -r.vy; r.vp = rand(-6, 6); }
         r.yaw = norm360(r.yaw + r.vy * dt); r.pitch += r.vp * dt; if (r.pitch > 35 || r.pitch < -20) r.vp *= -1;
         if (Math.abs(wrap180(r.yaw - v.yaw)) > 85) { r.dead = true; r.el.remove(); if (armed) spawn(); continue; }
         const p = v.project(r.yaw, r.pitch); r.x = p.x; r.y = p.y;
@@ -1134,7 +1146,7 @@ M({ id:'asteroids', cat:'move', icon:'☄️', name:'소행성 파괴', needs:['
     for (wave = 1; wave <= 2; wave++) {
       if (wave === 2) {
         rocks.forEach(r => r.el.remove()); rocks = []; arrowEl.hidden = true;
-        await c.checkpoint('B', '포탑 재장전'); if (c.finished) return;
+        await c.checkpoint('B', '전기 파리채 충전'); if (c.finished) return;
       }
       tipNow(); c.setLimit(25); armed = true;
       for (let i = 0; i < ALIVE; i++) spawn();
@@ -1146,12 +1158,12 @@ M({ id:'asteroids', cat:'move', icon:'☄️', name:'소행성 파괴', needs:['
   }
 });
 
-// ---------- 👥 암호 전달 (전달자=메인, 입력자=A) ----------
-M({ id:'code', cat:'duo', icon:'🗝️', name:'암호 전달', needs:[],
-  desc:'2인 미션! 전달자는 메인 단말기에서 기호 6개를 보고 말로만 설명하고, 입력자는 A 지점 단말기에서 듣고 입력해요. 서로 떨어져서 큰 소리로!',
-  rules:['🖥️ 전달자 = 메인 단말기 QR', '🖥️ 입력자 = A 지점 단말기 QR', '❌ 3번 틀리면 실패'],
+// ---------- 👥 배달 주문 (메뉴판=메인, 주문=A) ----------
+M({ id:'code', cat:'duo', icon:'🛵', name:'배달 주문', needs:[],
+  desc:'2인 미션! 메뉴판 담당은 메인 QR에서 메뉴 6개를 보고 말로만 불러 주고, 주문 담당은 A 지점에서 듣고 주문 앱에 입력해요. 떨어져서 큰 소리로!',
+  rules:['📱 메뉴판 담당 = 메인 QR', '📱 주문 담당 = A 지점 QR', '❌ 3번 틀리면 실패'],
   start(c){
-    const SY = ['🔴','🟠','🟡','🟢','🔵','🟣','🟥','🟧','🟨','🟩','🟦','🟪'];
+    const SY = ['🍕','🍔','🌭','🌮','🍗','🍖','🍜','🍝','🍣','🍤','🍙','🥟'];
     const roomHash = [...(room || 'x')].reduce((a, ch) => a * 31 + ch.charCodeAt(0) | 0, 7);
     const ansOf = set => shuffle(SY.slice(), seeded(set * 7919 + roomHash)).slice(0, 6);
     const confirmOf = set => String((set * 37 + 11 + Math.abs(roomHash) % 97) % 900 + 100);
@@ -1169,37 +1181,37 @@ M({ id:'code', cat:'duo', icon:'🗝️', name:'암호 전달', needs:[],
     }
     function chooseRole(){
       box.innerHTML = `<div class="lcd">역할을 고르세요</div>
-        <button class="btn full" id="rS">📢 전달자<br><small style="font-family:var(--body);font-size:15px">메인 단말기 · 기호를 보고 말로 설명</small></button>
+        <button class="btn full" id="rS">📋 메뉴판 담당<br><small style="font-family:var(--body);font-size:15px">메인 QR · 메뉴를 보고 말로 불러 주기</small></button>
         <div style="height:16px"></div>
-        <button class="btn full" id="rR" style="background:var(--hud)">⌨️ 입력자<br><small style="font-family:var(--body);font-size:15px">A 지점 단말기 · 듣고 입력</small></button>`;
+        <button class="btn full" id="rR" style="background:#7be08f">📲 주문 담당<br><small style="font-family:var(--body);font-size:15px">A 지점 · 듣고 주문 앱에 입력</small></button>`;
       box.querySelector('#rS').onclick = () => { sfx.click(); sender(); };
-      box.querySelector('#rR').onclick = async () => { sfx.click(); box.innerHTML = ''; await c.checkpoint('A', '입력 단말기로 이동'); if (!c.finished) receiver(); };
+      box.querySelector('#rR').onclick = async () => { sfx.click(); box.innerHTML = ''; await c.checkpoint('A', '주문 담당 자리로 이동'); if (!c.finished) receiver(); };
       c.tip('두 사람이 서로 다른 역할을 고르세요');
     }
     function sender(){
       c.terminal('');
       const set = 10 + Math.floor(Math.random() * 90), ans = ansOf(set);
-      box.innerHTML = `<div class="lcd">입력자에게 세트 번호를 불러 주세요</div><div class="codeshow">${set}</div>
-        <div class="label" style="margin:0 0 4px">아래 6개를 순서대로 말로만 설명! (화면 보여주기 금지)</div>
+      box.innerHTML = `<div class="lcd">주문 담당에게 가게 번호를 불러 주세요</div><div class="codeshow">${set}</div>
+        <div class="label" style="margin:0 0 4px">아래 메뉴 6개를 순서대로 말로만! (화면 보여주기 금지)</div>
         <div class="syms">${ans.map(s => `<span>${s}</span>`).join('')}</div>
-        <button class="btn full" id="toConfirm" style="margin-top:10px">입력자가 맞혔어요 → 확인 코드 입력</button>`;
-      c.progress(1, 2); c.tip('예: "첫 번째는 초록 네모"');
+        <button class="btn full" id="toConfirm" style="margin-top:10px">주문 완료됐대요 → 승인번호 입력</button>`;
+      c.progress(1, 2); c.tip('예: "첫 번째는 피자, 두 번째는 새우튀김"');
       box.querySelector('#toConfirm').onclick = () => {
         sfx.click();
         digitPad(3, (s, lcd) => {
-          if (s === confirmOf(set)) { sfx.ok(4); lcd.textContent = '통신 성공!'; c.progress(2, 2); c.later(() => c.done(), 500); return true; }
-          sfx.wrong(); lcd.textContent = '확인 코드가 달라요'; lcd.className = 'lcd err'; return false;
-        }, '입력자 화면의 확인 코드 3자리');
+          if (s === confirmOf(set)) { sfx.ok(4); lcd.textContent = '주문 성공! 🛵'; c.progress(2, 2); c.later(() => c.done(), 500); return true; }
+          sfx.wrong(); lcd.textContent = '승인번호가 달라요'; lcd.className = 'lcd err'; return false;
+        }, '주문 담당 화면의 승인번호 3자리');
       };
     }
     function receiver(){
       c.terminal('A');
-      digitPad(2, s => { symbolInput(parseInt(s, 10)); return true; }, '전달자가 부른 세트 번호');
-      c.tip('전달자에게 세트 번호를 물어보세요');
+      digitPad(2, s => { symbolInput(parseInt(s, 10)); return true; }, '메뉴판 담당이 부른 가게 번호');
+      c.tip('메뉴판 담당에게 가게 번호를 물어보세요');
     }
     function symbolInput(set){
       const ans = ansOf(set); let cur6 = [], errs = 0;
-      box.innerHTML = `<div class="lcd">세트 ${set} · 듣고 순서대로 6개</div><div class="slots">${'<span></span>'.repeat(6)}</div>
+      box.innerHTML = `<div class="lcd">가게 ${set} · 듣고 순서대로 6개</div><div class="slots">${'<span></span>'.repeat(6)}</div>
         <div class="grid" style="grid-template-columns:repeat(4,1fr)">${SY.map(k => `<button class="key sym" data-k="${k}">${k}</button>`).join('')}</div>
         <div class="row"><button class="btn ghost" id="clr">지우기</button><span class="label" id="lv" style="margin:8px 0 0">목숨 ❤️❤️❤️</span></div>`;
       const slots = box.querySelectorAll('.slots span'), lcd = box.querySelector('.lcd'), lv = box.querySelector('#lv');
@@ -1210,14 +1222,14 @@ M({ id:'code', cat:'duo', icon:'🗝️', name:'암호 전달', needs:[],
         if (cur6.length < 6) return;
         if (cur6.join('') === ans.join('')) {
           sfx.ok(4); c.progress(1, 2);
-          box.innerHTML = `<div class="lcd">정답! 전달자에게 이 코드를 불러 주세요</div><div class="codeshow">${confirmOf(set)}</div>
+          box.innerHTML = `<div class="lcd">주문 완료! 메뉴판 담당에게 승인번호를 불러 주세요</div><div class="codeshow">${confirmOf(set)}</div>
             <button class="btn full" id="fin" style="margin-top:14px">불러 줬어요 → 완료</button>`;
           box.querySelector('#fin').onclick = () => { c.progress(2, 2); c.done(); };
         } else {
           errs++; sfx.wrong(); bump(box); lv.textContent = '목숨 ' + '❤️'.repeat(3 - errs) + '🖤'.repeat(errs);
           if (errs >= 3) { c.fail('3번 틀렸어요'); return; }
-          lcd.textContent = '틀렸어요! 다시 들어 보세요'; lcd.className = 'lcd err';
-          setTimeout(() => { cur6 = []; render(); lcd.className = 'lcd'; lcd.textContent = `세트 ${set} · 듣고 순서대로 6개`; }, 700);
+          lcd.textContent = '주문이 틀렸어요! 다시 들어 보세요'; lcd.className = 'lcd err';
+          setTimeout(() => { cur6 = []; render(); lcd.className = 'lcd'; lcd.textContent = `가게 ${set} · 듣고 순서대로 6개`; }, 700);
         }
       }));
     }
@@ -1256,7 +1268,7 @@ function showMenu(){
 }
 
 function showIntro(m){
-  cur = m; document.title = m.name + ' · 말랑 미션';
+  cur = m; document.title = m.name + ' · 펜션 살리기';
   $('intro').hidden = false;
   $('introCat').textContent = CATS[m.cat].split(' (')[0];
   $('introIcon').textContent = m.icon; $('introName').textContent = m.name;
@@ -1301,8 +1313,8 @@ $('startBtn').addEventListener('click', () => {
 async function gate(){
   if (ctx) { ctx.cleanup(); ctx = null; }
   progressRow.hidden = true; timerEl.className = '';
-  await scanFor('', '메인 단말기 QR을 찍으세요',
-    room ? `<b style="color:var(--hud)">${esc(roomLabel(room))}</b> 메인 단말기 QR을 네모 안에 비춰 주세요` : '미션을 할 방의 메인 단말기 QR을 비춰 주세요');
+  await scanFor('', '메인 QR을 찍으세요',
+    room ? `<b style="color:var(--hud)">${esc(roomLabel(room))}</b> 메인 QR을 네모 안에 비춰 주세요` : '미션을 할 방의 메인 QR을 비춰 주세요');
   setBg(cur.ar ? 'cam' : 'stars');
   t0 = performance.now();
   ctx = makeCtx(); ctx.setLimit(cur.limit || 0);
