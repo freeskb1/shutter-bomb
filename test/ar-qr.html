@@ -42,6 +42,13 @@
   .qr img,.qr canvas{width:min(9cm,78vw)!important;height:min(9cm,78vw)!important;image-rendering:pixelated}
   .code{margin-top:10px;font-family:ui-monospace,Menlo,monospace;font-size:13px;color:#666;word-break:break-all}
   .link{display:inline-block;margin-top:10px;font-size:18px;color:#0b63d1;word-break:break-all}
+  .card.sub{background:#fff8d6}
+  .card.sub h2{font-size:36px}
+  .card .where{font-size:16px;color:#333;margin:-6px 0 10px;word-break:keep-all}
+  .rooms{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0 0 16px}
+  .chip{border:3px solid #000;border-radius:999px;background:#26305e;color:#fff;font-family:var(--body);font-size:18px;padding:6px 14px;box-shadow:0 4px 0 #000}
+  .chip.on{background:var(--hud);color:#000}
+  .guide{text-align:left;font-size:16px;line-height:1.5;color:var(--dim);border:2px solid rgba(124,247,255,.45);border-radius:14px;padding:10px 14px;margin:0 auto 18px;max-width:520px;word-break:keep-all}
 
   @media print{
     @page{size:A4;margin:12mm}
@@ -49,8 +56,14 @@
     header,.noprint{display:none!important}
     main{padding:0;max-width:none}
     .card{box-shadow:none;border:3px solid #000;margin:0 auto;max-width:none;width:100%;
-      break-after:page;page-break-after:always;padding:14mm 10mm}
-    .card:last-child{break-after:auto;page-break-after:auto}
+      break-after:page;page-break-after:always;padding:14mm 10mm;break-inside:avoid;page-break-inside:avoid}
+    .card.sub{background:#fff;padding:3mm 8mm;margin-bottom:4mm}
+    .card.sub.a{break-after:auto;page-break-after:auto}
+    .card.sub h2{font-size:34pt;margin:1mm 0 3mm}
+    .card.sub .qr img,.card.sub .qr canvas{width:8cm!important;height:8cm!important}
+    .card .where{font-size:11pt;margin:0 0 3mm}
+    .card.off{display:none!important}
+    .card.last{break-after:auto!important;page-break-after:auto!important}
     .card .tag{font-size:14pt}
     .card h2{font-size:54pt;margin:4mm 0 8mm}
     .qr img,.qr canvas{width:12cm!important;height:12cm!important}
@@ -64,9 +77,16 @@
   <header>
     <div class="badge">AR MISSION · 테스트용</div>
     <h1>방 QR 인쇄</h1>
-    <p>인쇄해서 각 방 문이나 벽에 붙여 주세요.<br>한 장에 QR 하나씩, 12cm 크기로 인쇄돼요.</p>
+    <p>방마다 3장: <b>메인 단말기</b>(12cm, 1장에 1개)<br>+ <b>A·B 지점</b>(8cm, 1장에 2개)</p>
+    <div class="rooms" id="chips"></div>
     <button class="btn" onclick="window.print()">인쇄하기</button>
   </header>
+  <div class="guide noprint">
+    📌 붙이는 법<br>
+    · 메인 단말기: 방 가운데쯤 눈높이 벽 (폰으로 비춘 채 퍼즐을 풀 곳)<br>
+    · A·B 지점: 메인과 <b>멀리, 서로도 떨어진 곳</b> (방 반대편 벽, 문 옆, 창가 등)<br>
+    · 너무 높거나 낮지 않게, 빛 반사 없는 곳
+  </div>
   <div id="cards"></div>
   <p class="noprint" id="libErr" hidden style="text-align:center;color:#ff5c7a">QR 생성 라이브러리를 못 불러왔어요. 네트워크를 확인하고 새로고침해 주세요.</p>
 </main>
@@ -80,27 +100,42 @@
   const wrap = document.getElementById('cards');
   const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+  const SPOTS = [
+    { s: '',  label: '메인 단말기', cls: 'main', where: '방 가운데쯤 눈높이 벽' },
+    { s: 'A', label: 'A 지점',     cls: 'sub a', where: '메인에서 멀리 떨어진 곳' },
+    { s: 'B', label: 'B 지점',     cls: 'sub b', where: '메인·A와 떨어진 곳' },
+  ];
+  const cards = [];
   ROOMS.forEach(r => {
-    const data = 'MALLANG-AU:room:' + r.id;
-    const url = new URL('mission.html?room=' + encodeURIComponent(r.id), location.href).href;
-    const card = document.createElement('section');
-    card.className = 'card';
-    card.innerHTML = `
-      <div class="tag">우주 쓰레기 줍기 · 방 QR</div>
-      <h2>${esc(r.name)}</h2>
-      <div class="qr"></div>
-      <div class="code">${esc(data)}</div>
-      <a class="link" href="${esc(url)}">이 방 미션 목록 열기 →<br>${esc(url)}</a>`;
-    wrap.appendChild(card);
-    if (typeof QRCode === 'function') {
-      new QRCode(card.querySelector('.qr'), {
-        text: data, width: 512, height: 512,
-        colorDark: '#000000', colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.M,
-      });
-    }
+    SPOTS.forEach(sp => {
+      const data = 'MALLANG-AU:room:' + r.id + (sp.s ? ':' + sp.s : '');
+      const url = new URL('mission.html?room=' + encodeURIComponent(r.id), location.href).href;
+      const card = document.createElement('section');
+      card.className = 'card ' + sp.cls; card.dataset.room = r.id;
+      card.innerHTML = `
+        <div class="tag">말랑 미션 · ${esc(r.name)}</div>
+        <h2>${esc(sp.s ? r.name + ' ' + sp.label : r.name)}</h2>
+        ${sp.s ? `<div class="where">${esc(sp.where)}에 붙이기</div>` : ''}
+        <div class="qr"></div>
+        <div class="code">${esc(data)}</div>
+        ${sp.s ? '' : `<a class="link" href="${esc(url)}">이 방 미션 목록 열기 →<br>${esc(url)}</a>`}`;
+      wrap.appendChild(card); cards.push(card);
+      if (typeof QRCode === 'function') {
+        new QRCode(card.querySelector('.qr'), { text: data, width: 512, height: 512, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+      }
+    });
   });
+  const markLast = () => { cards.forEach(c => c.classList.remove('last')); const vis = cards.filter(c => !c.hidden); if (vis.length) vis[vis.length-1].classList.add('last'); };
+  markLast();
   if (typeof QRCode !== 'function') document.getElementById('libErr').hidden = false;
+  // 방 골라서 인쇄
+  const chips = document.getElementById('chips');
+  [['all','전체']].concat(ROOMS.map(r => [r.id, r.name])).forEach(([id, name], i) => {
+    const b = document.createElement('button'); b.className = 'chip' + (i ? '' : ' on'); b.textContent = name;
+    b.onclick = () => { chips.querySelectorAll('.chip').forEach(x => x.classList.remove('on')); b.classList.add('on');
+      cards.forEach(c => { const off = id !== 'all' && c.dataset.room !== id; c.classList.toggle('off', off); c.hidden = off; }); markLast(); };
+    chips.appendChild(b);
+  });
 })();
 </script>
 </body>
