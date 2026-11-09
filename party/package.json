@@ -1,0 +1,12 @@
+{
+  "name": "tonghaetda-party",
+  "version": "1.0.0",
+  "private": true,
+  "description": "통했다! 파티 — 모두 같은 답을 쓰면 점수가 오르는 실시간 회식 게임",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "loadtest": "node test/loadtest.js"
+  },
+  "engines": { "node": ">=18" }
+}

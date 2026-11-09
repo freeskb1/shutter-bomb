@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f1630">
+<title>통했다! 파티 · 진행자</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<link rel="stylesheet" href="/common.css">
+<script src="/qrcode.js"></script>
+<style>
+  body { overflow-x: hidden; }
+  .app { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+  .top { display: flex; align-items: center; gap: 18px; padding: 14px 24px; border-bottom: 1px solid var(--line); background: #0f1630cc; backdrop-filter: blur(6px); }
+  .top .logo { font-size: 24px; }
+  .top .ttl { color: var(--muted); font-weight: 700; font-size: 18px; }
+  .top .sp { flex: 1; }
+  .pill { background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-weight: 800; font-size: 16px; white-space: nowrap; }
+  .pill b { color: var(--gold); }
+  .mini-qr { background: #fff; padding: 4px; border-radius: 8px; width: 64px; height: 64px; cursor: pointer; }
+    .stage { flex: 1; padding: 28px 32px; display: flex; flex-direction: column; }
+  .controls { display: flex; gap: 10px; align-items: center; padding: 14px 24px; border-top: 1px solid var(--line); background: #0f1630ee; flex-wrap: wrap; position: sticky; bottom: 0; z-index: 5; }
+  .controls .sp { flex: 1; }
+  .next-q { color: var(--muted); font-size: 14px; max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .next-q b { color: var(--text); }
+  kbd { font-size: 11px; background: #0006; padding: 2px 5px; border-radius: 4px; margin-left: 4px; opacity: .7; }
+
+  /* 시작 화면 */
+  .setup { max-width: 520px; margin: 10vh auto; display: flex; flex-direction: column; gap: 14px; text-align: center; padding: 0 16px; }
+  .setup h1 { font-size: 48px; margin: 0; }
+
+  /* 대기실 */
+  .lobby { display: grid; grid-template-columns: minmax(300px, 420px) 1fr; gap: 32px; flex: 1; }
+  .join-box { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .qr { background: #fff; padding: 16px; border-radius: 20px; }
+    .code { font-size: 64px; font-weight: 900; letter-spacing: .15em; color: var(--gold); line-height: 1; }
+  .url { font-size: 18px; color: var(--muted); word-break: break-all; }
+  .people { display: flex; flex-wrap: wrap; gap: 10px; align-content: flex-start; }
+  .chip { padding: 8px 14px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); font-weight: 700; font-size: 18px; position: relative; }
+  .chip.off { opacity: .4; }
+  .chip.done { background: var(--green); color: #003320; border-color: transparent; }
+  .chip .x { display: none; position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; background: var(--red); color: #fff; font-size: 12px; line-height: 20px; text-align: center; }
+  .people.editable .chip:hover .x { display: block; }
+  .big-count { font-size: 96px; font-weight: 900; line-height: 1; }
+
+  /* 질문 */
+  .question { font-size: clamp(36px, 5vw, 72px); font-weight: 900; text-align: center; line-height: 1.25; word-break: keep-all; margin: 10px auto 18px; max-width: 1200px; letter-spacing: -0.02em; }
+  .qno { text-align: center; color: var(--gold); font-weight: 900; letter-spacing: .15em; font-size: 20px; }
+  .ask-row { display: flex; justify-content: center; align-items: center; gap: 48px; margin: 10px 0 24px; }
+  .countdown { font-size: 120px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; min-width: 2ch; text-align: center; }
+  .countdown.urgent { color: var(--red); animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { transform: scale(1.08); } }
+  .sub-count { text-align: center; }
+  .sub-count .n { font-size: 80px; font-weight: 900; color: var(--green); line-height: 1; }
+  .sub-count .t { font-size: 22px; color: var(--muted); font-weight: 700; }
+  .progress { height: 10px; border-radius: 10px; background: #0b1126; overflow: hidden; max-width: 900px; margin: 0 auto 24px; width: 100%; }
+  .progress i { display: block; height: 100%; background: var(--green); transition: width .3s; }
+  .people.center { justify-content: center; max-width: 1300px; margin: 0 auto; }
+
+  /* 결과 */
+  .groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+  .g { background: var(--card); border: 2px solid var(--line); border-radius: 20px; padding: 18px; cursor: pointer; position: relative; transition: border-color .15s, transform .15s; }
+  .g:hover { border-color: var(--blue); }
+  .g.sel { border-color: var(--gold); transform: translateY(-3px); box-shadow: 0 0 0 4px #ffc94d33; }
+  .g.best { background: linear-gradient(135deg, #3a2f00, #5b4400); border-color: var(--gold); }
+  .g .lbl { font-size: 30px; font-weight: 900; word-break: break-all; }
+  .g .cnt { font-size: 22px; font-weight: 900; color: var(--gold); }
+  .g .crown { position: absolute; top: -16px; right: 14px; font-size: 30px; }
+  .g .who { margin-top: 8px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+  .g .var { margin-top: 6px; font-size: 13px; color: var(--blue); }
+  .g .var button { background: none; color: var(--red); text-decoration: underline; font-size: 13px; padding: 0 0 0 6px; }
+  .solos { margin-top: 26px; }
+  .solos h3 { margin: 0 0 10px; color: var(--muted); font-size: 16px; }
+  .solo { display: inline-block; margin: 0 8px 8px 0; padding: 8px 12px; border-radius: 10px; background: #0b1126; border: 2px solid var(--line); cursor: pointer; font-weight: 700; }
+  .solo.sel { border-color: var(--gold); }
+  .solo small { color: var(--muted); font-weight: 600; margin-left: 6px; }
+  .hint { color: var(--muted); font-size: 14px; text-align: center; margin-bottom: 14px; }
+
+  /* 순위 */
+  .overlay { position: fixed; inset: 0; background: #070b1ee8; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 30px; }
+  .board { width: min(900px, 100%); }
+  .board h2 { text-align: center; font-size: 44px; margin: 0 0 20px; }
+  .row { display: flex; align-items: center; gap: 16px; padding: 12px 20px; border-radius: 14px; background: var(--card); margin-bottom: 8px; font-size: 26px; font-weight: 800; }
+  .row .r { width: 56px; color: var(--gold); font-weight: 900; }
+  .row .nm { flex: 1; }
+  .row .sc { font-variant-numeric: tabular-nums; }
+  .podium { display: flex; justify-content: center; align-items: flex-end; gap: 18px; margin: 20px 0 30px; }
+  .pod { text-align: center; width: 220px; }
+  .pod .nm { font-size: 30px; font-weight: 900; margin-bottom: 8px; word-break: break-all; }
+  .pod .blk { border-radius: 16px 16px 0 0; display: flex; flex-direction: column; justify-content: flex-start; padding-top: 14px; font-weight: 900; }
+  .pod .blk .m { font-size: 52px; }
+  .pod .blk .s { font-size: 24px; }
+
+  /* 설정 */
+  .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(520px, 100vw); background: var(--bg2); border-left: 1px solid var(--line); z-index: 30; padding: 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+  .drawer h2 { margin: 0; }
+  .drawer label { font-weight: 700; font-size: 14px; color: var(--muted); }
+  .drawer textarea { width: 100%; min-height: 46vh; background: #0b1126; border: 2px solid var(--line); border-radius: 12px; padding: 12px; font-size: 15px; line-height: 1.6; resize: vertical; }
+  .drawer .input { font-size: 16px; padding: 12px; }
+  .row2 { display: flex; gap: 10px; align-items: center; }
+
+  @media (max-width: 860px) {
+    .lobby { grid-template-columns: 1fr; }
+    .stage { padding: 18px 16px; }
+    .top { padding: 10px 16px; flex-wrap: wrap; }
+    .controls { padding: 10px 16px; }
+    .countdown { font-size: 80px; }
+    .sub-count .n { font-size: 56px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top hidden" id="top">
+    <div class="logo">통했다<b>!</b> 파티</div>
+    <div class="ttl" id="ttl"></div>
+    <div class="sp"></div>
+    <div class="pill">방 번호 <b id="tcode"></b></div>
+    <div class="pill">참가 <b id="tcount">0</b>명</div>
+    <div class="mini-qr hidden" id="miniqr" title="참여 QR 크게 보기"></div>
+    <button class="btn ghost small" id="btnSettings">⚙︎ 질문·설정</button>
+  </div>
+  <div class="stage" id="stage"></div>
+  <div class="controls hidden" id="controls"></div>
+</div>
+<div id="layer"></div>
+
+<script src="/common.js"></script>
+<script>
+// ---------------- 기본 질문 ({회사}는 설정에서 바꾼 이름으로 바뀜) ----------------
+const DEFAULT_QUESTIONS = `
+{회사} 근처 점심 메뉴 하면 제일 먼저 떠오르는 것은?
+회의 시간에 가장 많이 들리는 말은?
+월요일 아침 출근하자마자 제일 먼저 하는 일은?
+올해 {회사}를 한 단어로 표현하면?
+2026년을 한 글자로 표현하면?
+회식 2차로 가장 많이 가는 곳은?
+회식 메뉴로 최고인 것은?
+야근할 때 가장 많이 시켜 먹는 음식은?
+탕비실에서 제일 먼저 없어지는 간식은?
+{회사} 사람들이 가장 많이 마시는 음료는?
+직장인이 가장 듣기 싫은 말은?
+상사에게 가장 듣고 싶은 말은?
+연말 보너스가 나오면 제일 먼저 하고 싶은 것은?
+월급날 가장 먼저 생각나는 것은?
+금요일 오후 4시에 드는 생각은?
+퇴근 후 가장 많이 하는 일은?
+점심 먹고 남은 시간에 하는 일은?
+내 책상 위에 꼭 있는 물건은?
+엑셀 말고 업무에 가장 많이 쓰는 프로그램은?
+출근길 필수템 하나는?
+"보고서" 하면 떠오르는 단어는?
+메신저에서 가장 많이 쓰는 대답은?
+내년에 {회사}에 꼭 생겼으면 하는 것은?
+워크숍 하면 떠오르는 것은?
+회식 노래방에서 꼭 나오는 노래는?
+직장인 스트레스 해소법 1위는?
+연차 쓰고 가장 가고 싶은 여행지는?
+회사 동료에게 받고 싶은 연말 선물은?
+연말 하면 생각나는 노래는?
+내년 {회사}의 키워드를 한 단어로 하면?
+`.trim();
+
+const HOST_KEY = 'tp:host';
+const CFG_KEY = 'tp:hostcfg';
+let host = store(HOST_KEY); // {code, hostKey}
+let cfg = Object.assign({ questions: DEFAULT_QUESTIONS, company: '우리 회사', seconds: 40, idx: 0, shuffle: false }, store(CFG_KEY) || {});
+let state = null;
+let conn = null;
+let tick = null;
+let selected = null;        // 합치기용으로 고른 그룹 key
+let animatedRound = 0;      // 결과 공개 애니메이션을 한 라운드
+let showBoard = false;
+let showSettings = false;
+let qrBig = false;
+
+makeSnow(40);
+const saveCfg = () => store(CFG_KEY, cfg);
+const joinUrl = () => `${location.origin}/?room=${host.code}`;
+
+function deck() {
+  return cfg.questions.split('\n').map((s) => s.trim()).filter(Boolean).map((s) => s.replaceAll('{회사}', cfg.company || '우리 회사'));
+}
+function nextQuestion() { const d = deck(); return d.length ? d[cfg.idx % d.length] : null; }
+
+async function hostDo(action, extra) {
+  try { await post('/api/host', { room: host.code, hostKey: host.hostKey, action, ...extra }); }
+  catch (e) { toast(e.message); throw e; }
+}
+
+async function askNext(customText) {
+  const q = customText || nextQuestion();
+  if (!q) return toast('설정에서 질문을 넣어 주세요');
+  await hostDo('ask', { question: q, seconds: cfg.seconds });
+  if (!customText) { cfg.idx++; saveCfg(); }
+  selected = null;
+  showBoard = false;
+}
+
+// ---------------- 시작 화면 ----------------
+function showSetup() {
+  $('#top').classList.add('hidden');
+  $('#controls').classList.add('hidden');
+  const st = $('#stage');
+  st.innerHTML = '';
+  const title = h('input', { class: 'input', placeholder: '예: 2026 마케팅팀 송년회', maxlength: 30, value: cfg.title || '' });
+  const company = h('input', { class: 'input', placeholder: '질문에 들어갈 회사/팀 이름 (예: 우리 회사, 개발팀)', maxlength: 20, value: cfg.company || '' });
+  const btn = h('button', { class: 'btn', style: 'font-size:22px;padding:18px' }, '새 게임 방 만들기');
+  btn.onclick = async () => {
+    btn.disabled = true;
+    try {
+      cfg.title = title.value.trim(); cfg.company = company.value.trim() || '우리 회사'; cfg.idx = 0; saveCfg();
+      const r = await post('/api/room', { title: cfg.title });
+      host = { code: r.code, hostKey: r.hostKey };
+      store(HOST_KEY, host);
+      startHost();
+    } catch (e) { toast(e.message); btn.disabled = false; }
+  };
+  st.append(h('div', { class: 'setup' },
+    h('div', { style: 'font-size:72px' }, '🎄'),
+    h('h1', { class: 'logo' }, '통했다', h('b', {}, '!'), ' 파티'),
+    h('div', { class: 'muted', style: 'font-size:18px;line-height:1.6' }, '질문에 모두가 각자 답을 써요.', h('br'), '나와 같은 답을 쓴 사람 수만큼 점수! 혼자 쓴 답은 0점.'),
+    h('div', { style: 'text-align:left' }, h('label', { class: 'muted' }, '행사 이름'), title),
+    h('div', { style: 'text-align:left' }, h('label', { class: 'muted' }, '회사·팀 이름'), company),
+    btn,
+    host ? h('button', { class: 'btn ghost', onclick: startHost }, `이전 방(${host.code}) 이어서 진행`) : null,
+  ));
+}
+
+function startHost() {
+  conn && conn.close();
+  conn = connectRoom(host.code, null, onState, () => {
+    store(HOST_KEY, null); host = null; toast('방이 없어졌어요. 새로 만들어 주세요'); showSetup();
+  });
+  $('#top').classList.remove('hidden');
+  $('#controls').classList.remove('hidden');
+  $('#tcode').textContent = host.code;
+  const mq = $('#miniqr');
+  mq.innerHTML = '';
+  makeQR(mq, 56);
+  mq.onclick = () => { qrBig = true; renderLayer(); };
+}
+
+function makeQR(el, size) {
+  const qr = qrcode(0, 'M');
+  qr.addData(joinUrl());
+  qr.make();
+  el.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+  const svg = el.querySelector('svg');
+  svg.style.width = svg.style.height = size + 'px';
+  svg.style.display = 'block';
+}
+
+function onState(st) {
+  const prevPhase = state && state.phase;
+  state = st;
+  if (st.phase !== 'revealed') selected = null;
+  if (prevPhase !== st.phase && st.phase === 'final') showBoard = false;
+  render();
+}
+
+// ---------------- 화면 그리기 ----------------
+function render() {
+  const st = state;
+  $('#ttl').textContent = st.title || '';
+  $('#tcount').textContent = st.players.length;
+  $('#miniqr').classList.toggle('hidden', st.phase === 'lobby');
+  clearInterval(tick);
+  const stage = $('#stage');
+  stage.innerHTML = '';
+
+  if (st.phase === 'lobby') renderLobby(stage);
+  else if (st.phase === 'asking' || st.phase === 'closed') renderAsking(stage);
+  else if (st.phase === 'revealed') renderReveal(stage);
+  else if (st.phase === 'final') renderFinal(stage);
+
+  renderControls();
+  if (!showSettings) renderLayer(); // 설정 편집 중엔 입력이 날아가지 않게
+}
+
+function peopleChips(players, opts = {}) {
+  const box = h('div', { class: 'people' + (opts.center ? ' center' : '') + (opts.editable ? ' editable' : '') });
+  const done = new Set(opts.done || []);
+  for (const p of [...players].sort((a, b) => a.name.localeCompare(b.name, 'ko'))) {
+    const cls = 'chip' + (done.has(p.id) ? ' done' : '') + (!p.online && !done.has(p.id) ? ' off' : '');
+    const chip = h('div', { class: cls, title: p.online ? '접속 중' : '연결 끊김' }, p.name);
+    if (opts.editable) chip.append(h('span', { class: 'x', onclick: () => { if (confirm(`${p.name} 님을 내보낼까요?`)) hostDo('kick', { pid: p.id }); } }, '✕'));
+    box.append(chip);
+  }
+  return box;
+}
+
+function renderLobby(stage) {
+  const st = state;
+  const qr = h('div', { class: 'qr' });
+  makeQR(qr, 300);
+  stage.append(h('div', { class: 'lobby' },
+    h('div', { class: 'join-box' },
+      h('div', { style: 'font-size:26px;font-weight:900' }, '📱 휴대폰 카메라로 찍고 참여!'),
+      qr,
+      h('div', { class: 'muted', style: 'font-weight:700' }, '또는 접속 후 방 번호 입력'),
+      h('div', { class: 'code' }, st.code),
+      h('div', { class: 'url' }, location.host),
+    ),
+    h('div', {},
+      h('div', { style: 'display:flex;align-items:baseline;gap:14px;margin-bottom:18px' },
+        h('div', { class: 'big-count gold' }, st.players.length),
+        h('div', { style: 'font-size:28px;font-weight:800' }, '명 입장'),
+      ),
+      st.players.length ? peopleChips(st.players, { editable: true }) : h('div', { class: 'muted', style: 'font-size:22px' }, '아직 아무도 없어요. QR을 찍어 보세요!'),
+      h('div', { class: 'card', style: 'margin-top:28px' },
+        h('div', { style: 'font-weight:900;font-size:20px;margin-bottom:6px' }, '🎯 규칙'),
+        h('div', { class: 'muted', style: 'font-size:18px;line-height:1.7' },
+          '① 질문이 뜨면 휴대폰에 답을 하나 써요', h('br'),
+          '② 나와 같은 답을 쓴 사람 수 = 내 점수 (예: 7명이 같으면 각자 +7점)', h('br'),
+          '③ 혼자만 쓴 답은 0점! 남들이 쓸 것 같은 답을 노리세요'),
+      ),
+    ),
+  ));
+}
+
+function renderAsking(stage) {
+  const st = state;
+  const total = st.players.length;
+  const n = st.submitted.length;
+  const cd = h('div', { class: 'countdown', id: 'cd' });
+  stage.append(
+    h('div', { class: 'qno' }, `QUESTION ${st.roundNo}`),
+    h('div', { class: 'question rise' }, st.question),
+    h('div', { class: 'ask-row' },
+      st.phase === 'closed' ? h('div', { class: 'countdown', style: 'font-size:72px;color:var(--red)' }, '마감!') : cd,
+      h('div', { class: 'sub-count' }, h('div', { class: 'n' }, n), h('div', { class: 't' }, `/ ${total}명 제출`)),
+    ),
+    h('div', { class: 'progress' }, h('i', { style: `width:${total ? (n / total) * 100 : 0}%` })),
+    peopleChips(st.players, { center: true, done: st.submitted }),
+  );
+  if (st.phase === 'asking') {
+    const upd = () => {
+      if (!st.deadline) { cd.textContent = '∞'; cd.style.fontSize = '90px'; return; }
+      const s = Math.max(0, Math.ceil((st.deadline - (Date.now() + st.clockOffset)) / 1000));
+      cd.textContent = s;
+      cd.classList.toggle('urgent', s <= 5);
+    };
+    upd();
+    tick = setInterval(upd, 200);
+  }
+}
+
+function renderReveal(stage) {
+  const st = state;
+  const animate = animatedRound !== st.roundNo;
+  animatedRound = st.roundNo;
+  const groups = st.groups || [];
+  const multi = groups.filter((g) => g.size >= 2);
+  const solos = groups.filter((g) => g.size < 2);
+  const answered = groups.reduce((a, g) => a + g.size, 0);
+
+  stage.append(
+    h('div', { class: 'qno' }, `QUESTION ${st.roundNo} · 결과`),
+    h('div', { class: 'question', style: 'font-size:clamp(28px,3.4vw,48px);margin-bottom:8px' }, st.question),
+    h('div', { class: 'hint' }, `${answered}명 답변 · 같은 뜻인데 따로 나온 답은 `, h('b', { class: 'gold' }, '카드 두 개를 차례로 눌러 합치기'), ' (먼저 누른 쪽이 뒤에 누른 쪽으로 들어가요)'),
+  );
+
+  const n = multi.length;
+  const grid = h('div', { class: 'groups' });
+  multi.forEach((g, i) => {
+    // 작은 그룹부터 차례로, 1등 그룹이 마지막에 등장
+    const delay = animate ? (n - 1 - i) * 0.35 + (i === 0 ? 0.6 : 0) : 0;
+    const card = h('div', {
+      class: 'g' + (i === 0 ? ' best' : '') + (selected === g.key ? ' sel' : '') + (animate ? ' pop' : ''),
+      style: `animation-delay:${delay}s`,
+      onclick: () => pick(g.key),
+    },
+      i === 0 ? h('div', { class: 'crown' }, '👑') : null,
+      h('div', { class: 'cnt' }, `${g.size}명 · +${g.points}점`),
+      h('div', { class: 'lbl', style: `font-size:${Math.min(44, 24 + g.size * 2)}px` }, g.label),
+      h('div', { class: 'who' }, g.members.slice(0, 14).map((m) => m.name).join(', ') + (g.members.length > 14 ? ` 외 ${g.members.length - 14}명` : '')),
+      g.variants.length > 1 ? h('div', { class: 'var' }, '같은 답으로 인정: ' + g.variants.join(' / '),
+        g.merged ? h('button', { onclick: (e) => { e.stopPropagation(); hostDo('unmerge', { key: g.key }); } }, '합치기 되돌리기') : null) : null,
+    );
+    grid.append(card);
+  });
+  if (!n) grid.append(h('div', { class: 'muted', style: 'font-size:24px;grid-column:1/-1;text-align:center' }, '😮 겹친 답이 하나도 없어요!'));
+  stage.append(grid);
+
+  if (solos.length) {
+    stage.append(h('div', { class: 'solos' + (animate ? ' rise' : ''), style: animate ? `animation-delay:${n * 0.35 + 0.6}s` : '' },
+      h('h3', {}, `혼자 쓴 답 (0점) · ${solos.length}개`),
+      solos.map((g) => h('span', { class: 'solo' + (selected === g.key ? ' sel' : ''), onclick: () => pick(g.key) }, g.label, h('small', {}, g.members[0]?.name))),
+    ));
+  }
+}
+
+async function pick(key) {
+  if (!selected) { selected = key; render(); return; }
+  if (selected === key) { selected = null; render(); return; }
+  const from = selected;
+  selected = null;
+  try { await hostDo('merge', { from, into: key }); } catch { render(); }
+}
+
+function boardRows(players, limit) {
+  return players.slice(0, limit).map((p) => h('div', { class: 'row rise' }, h('span', { class: 'r' }, p.rank + '위'), h('span', { class: 'nm' }, p.name), h('span', { class: 'sc' }, p.score + '점')));
+}
+
+function renderFinal(stage) {
+  const ps = state.players;
+  const top = ps.slice(0, 3);
+  const order = [top[1], top[0], top[2]];
+  const heights = [200, 260, 160];
+  const colors = ['#c9d2e8', 'var(--gold)', '#e3a36b'];
+  const medal = (p) => ['🥇', '🥈', '🥉'][p.rank - 1] || p.rank + '위';
+  stage.append(
+    h('div', { style: 'text-align:center;font-size:56px;font-weight:900' }, '🏆 최종 결과'),
+    h('div', { class: 'podium' }, order.map((p, i) => p ? h('div', { class: 'pod pop', style: `animation-delay:${[0.6, 1.4, 0.2][i]}s` },
+      h('div', { class: 'nm' }, p.name),
+      h('div', { class: 'blk', style: `height:${heights[i]}px;background:${colors[i]};color:#1a1400` }, h('div', { class: 'm' }, medal(p)), h('div', { class: 's' }, p.score + '점')),
+    ) : h('div', { class: 'pod' }))),
+    h('div', { class: 'board', style: 'margin:0 auto' }, boardRows(ps.slice(3), 7)),
+  );
+}
+
+function renderControls() {
+  const st = state;
+  const c = $('#controls');
+  c.innerHTML = '';
+  const nq = nextQuestion();
+  const nextInfo = h('div', { class: 'next-q' }, '다음 질문: ', h('b', {}, nq || '(없음)'));
+  const skip = h('button', { class: 'btn ghost small', onclick: () => { cfg.idx++; saveCfg(); renderControls(); } }, '건너뛰기');
+  const custom = h('button', { class: 'btn ghost small', onclick: () => { const q = prompt('바로 낼 질문을 입력하세요'); if (q && q.trim()) askNext(q.trim()); } }, '즉석 질문');
+  const boardBtn = h('button', { class: 'btn ghost', onclick: () => { showBoard = !showBoard; renderLayer(); } }, '📊 순위', h('kbd', {}, 'L'));
+
+  if (st.phase === 'lobby') {
+    c.append(nextInfo, skip, custom, h('div', { class: 'sp' }),
+      h('button', { class: 'btn', id: 'primary', onclick: () => askNext() }, '▶ 첫 질문 시작', h('kbd', {}, 'Space')));
+  } else if (st.phase === 'asking') {
+    c.append(
+      h('button', { class: 'btn ghost small', onclick: () => hostDo('addTime', { seconds: 15 }) }, '+15초'),
+      h('button', { class: 'btn ghost small', onclick: () => { if (confirm('이번 질문을 취소할까요? (점수에 안 들어가요)')) hostDo('cancelRound'); } }, '질문 취소'),
+      h('div', { class: 'sp' }),
+      h('button', { class: 'btn red', onclick: () => hostDo('close') }, '⏹ 마감'),
+      h('button', { class: 'btn', id: 'primary', onclick: () => hostDo('reveal') }, '🎉 바로 공개', h('kbd', {}, 'Space')),
+    );
+  } else if (st.phase === 'closed') {
+    c.append(
+      h('button', { class: 'btn ghost small', onclick: () => { if (confirm('이번 질문을 취소할까요? (점수에 안 들어가요)')) hostDo('cancelRound'); } }, '질문 취소'),
+      h('div', { class: 'sp' }),
+      h('button', { class: 'btn', id: 'primary', onclick: () => hostDo('reveal') }, '🎉 결과 공개', h('kbd', {}, 'Space')),
+    );
+  } else if (st.phase === 'revealed') {
+    c.append(nextInfo, skip, custom, h('div', { class: 'sp' }), boardBtn,
+      h('button', { class: 'btn ghost', onclick: () => { if (confirm('게임을 끝내고 최종 결과를 보여줄까요?')) hostDo('final'); } }, '🏆 최종 결과'),
+      h('button', { class: 'btn', id: 'primary', onclick: () => askNext() }, '▶ 다음 질문', h('kbd', {}, 'Space')));
+  } else if (st.phase === 'final') {
+    c.append(h('button', { class: 'btn ghost', onclick: () => { showBoard = true; renderLayer(); } }, '전체 순위'),
+      h('div', { class: 'sp' }),
+      h('button', { class: 'btn ghost', onclick: () => hostDo('lobby') }, '↩ 게임으로 돌아가기'),
+      h('button', { class: 'btn ghost', onclick: () => { if (confirm('이 방을 닫고 새 게임을 만들까요? (지금 점수는 사라져요)')) { store(HOST_KEY, null); host = null; conn && conn.close(); showSetup(); } } }, '새 게임'));
+  }
+}
+
+function renderLayer() {
+  const layer = $('#layer');
+  layer.innerHTML = '';
+  if (qrBig && host) {
+    const qr = h('div', { class: 'qr' });
+    makeQR(qr, 380);
+    layer.append(h('div', { class: 'overlay', onclick: () => { qrBig = false; renderLayer(); } },
+      h('div', { class: 'join-box' }, qr, h('div', { class: 'code' }, host.code), h('div', { class: 'url' }, location.host), h('div', { class: 'muted' }, '아무 곳이나 누르면 닫혀요'))));
+  }
+  if (showBoard && state) {
+    layer.append(h('div', { class: 'overlay', onclick: () => { showBoard = false; renderLayer(); } },
+      h('div', { class: 'board', onclick: (e) => e.stopPropagation() },
+        h('h2', {}, '📊 현재 순위'),
+        h('div', { style: 'max-height:70vh;overflow-y:auto' }, boardRows(state.players, state.phase === 'final' ? 300 : 10)),
+        h('div', { class: 'muted', style: 'text-align:center;margin-top:10px' }, 'L 또는 바깥을 누르면 닫혀요'))));
+  }
+  if (showSettings) {
+    const ta = h('textarea', { spellcheck: 'false' }, cfg.questions);
+    const company = h('input', { class: 'input', value: cfg.company, maxlength: 20 });
+    const secs = h('input', { class: 'input', type: 'number', min: 0, max: 600, value: cfg.seconds, style: 'width:110px' });
+    const idx = h('input', { class: 'input', type: 'number', min: 1, value: (cfg.idx % Math.max(1, deck().length)) + 1, style: 'width:110px' });
+    const close = () => {
+      cfg.questions = ta.value; cfg.company = company.value.trim() || '우리 회사';
+      cfg.seconds = Math.max(0, Math.min(600, Number(secs.value) || 0));
+      cfg.idx = Math.max(0, (Number(idx.value) || 1) - 1);
+      saveCfg(); showSettings = false; renderLayer(); if (state) renderControls();
+    };
+    layer.append(h('div', { class: 'overlay', style: 'background:#0008', onclick: close }),
+      h('div', { class: 'drawer' },
+        h('h2', {}, '질문 · 설정'),
+        h('label', {}, '질문 목록 (한 줄에 하나, {회사} 는 아래 이름으로 바뀜)'), ta,
+        h('div', { class: 'row2' },
+          h('button', { class: 'btn ghost small', onclick: () => { const l = ta.value.split('\n').filter((s) => s.trim()); for (let i = l.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; } ta.value = l.join('\n'); } }, '🔀 순서 섞기'),
+          h('button', { class: 'btn ghost small', onclick: () => { if (confirm('기본 질문으로 되돌릴까요?')) ta.value = DEFAULT_QUESTIONS; } }, '기본 질문으로'),
+        ),
+        h('label', {}, '회사·팀 이름'), company,
+        h('div', { class: 'row2' },
+          h('div', {}, h('label', {}, '답 쓰는 시간(초, 0=무제한)'), h('br'), secs),
+          h('div', {}, h('label', {}, '다음에 낼 질문 번호'), h('br'), idx),
+        ),
+        h('button', { class: 'btn', onclick: close }, '저장하고 닫기'),
+        h('div', { class: 'muted', style: 'font-size:13px;line-height:1.6' },
+          '단축키: Space = 다음 단계, L = 순위, Q = 참여 QR', h('br'),
+          '같은 뜻의 답(예: "BBQ"와 "비비큐")은 결과 화면에서 카드를 차례로 눌러 합치면 점수가 다시 계산돼요.'),
+      ));
+  }
+}
+
+$('#btnSettings').onclick = () => { showSettings = true; renderLayer(); };
+
+document.addEventListener('keydown', (e) => {
+  if (!state || showSettings || e.target.matches('input, textarea')) return;
+  if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); const b = $('#primary'); if (b && !qrBig && !showBoard) b.click(); }
+  else if (e.key === 'l' || e.key === 'L' || e.key === 'ㅣ') { showBoard = !showBoard; renderLayer(); }
+  else if (e.key === 'q' || e.key === 'Q' || e.key === 'ㅂ') { qrBig = !qrBig; renderLayer(); }
+  else if (e.key === 'Escape') { qrBig = false; showBoard = false; renderLayer(); }
+});
+
+if (host) startHost(); else showSetup();
+</script>
+</body>
+</html>

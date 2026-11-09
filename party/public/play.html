@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1630">
+<title>통했다! 파티</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<link rel="stylesheet" href="/common.css">
+<style>
+  .wrap { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 20px 16px calc(28px + env(safe-area-inset-bottom)); min-height: 100dvh; display: flex; flex-direction: column; }
+  header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  header .logo { font-size: 20px; }
+  header .me { font-size: 14px; color: var(--muted); text-align: right; }
+  header .me b { color: var(--text); }
+  main { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 16px; }
+  .title { font-size: 34px; font-weight: 900; line-height: 1.2; text-align: center; letter-spacing: -0.02em; }
+  .sub { text-align: center; color: var(--muted); font-size: 16px; line-height: 1.5; }
+  label { display: block; font-size: 14px; color: var(--muted); margin: 0 0 6px 4px; font-weight: 600; }
+  .q { font-size: 26px; font-weight: 900; line-height: 1.35; text-align: center; word-break: keep-all; }
+  .qno { text-align: center; color: var(--gold); font-weight: 800; font-size: 14px; letter-spacing: .1em; }
+  .timer { text-align: center; font-size: 15px; color: var(--muted); font-weight: 700; }
+  .timer.urgent { color: var(--red); }
+  .bar { height: 6px; background: #0b1126; border-radius: 6px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--gold); transition: width .3s linear; }
+  .mine { text-align: center; padding: 22px; }
+  .mine .ans { font-size: 30px; font-weight: 900; margin: 6px 0; word-break: break-all; }
+  .big-pts { font-size: 64px; font-weight: 900; text-align: center; line-height: 1; }
+  .big-pts small { font-size: 24px; }
+  .stat { display: flex; gap: 10px; }
+  .stat > div { flex: 1; text-align: center; padding: 14px 6px; }
+  .stat b { display: block; font-size: 26px; font-weight: 900; }
+  .stat span { font-size: 13px; color: var(--muted); }
+  .grp { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 12px; background: #0b1126; font-weight: 700; }
+  .grp.me { outline: 2px solid var(--gold); }
+  .grp .n { color: var(--gold); font-weight: 900; white-space: nowrap; margin-left: 10px; }
+  .grps { display: flex; flex-direction: column; gap: 6px; }
+  .waiting-dots::after { content: ''; animation: dots 1.4s steps(4) infinite; }
+  @keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+  .emoji { font-size: 64px; text-align: center; }
+  .err { color: var(--red); font-weight: 700; text-align: center; min-height: 1.4em; }
+  .leave { margin-top: 18px; text-align: center; }
+  .leave button { background: none; color: var(--muted); font-size: 13px; text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">통했다<b>!</b> 파티</div>
+    <div class="me" id="me"></div>
+  </header>
+  <main id="main"></main>
+</div>
+<script src="/common.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+let roomCode = (params.get('room') || store('tp:lastRoom') || '').replace(/\D/g, '').slice(0, 4);
+let session = roomCode ? store('tp:p:' + roomCode) : null; // {pid, name}
+let state = null;
+let myAnswer = null;      // 이번 라운드 내 답
+let conn = null;
+let tick = null;
+let editing = false;      // 제출 후 다시 고치는 중인지
+let draft = '';
+
+makeSnow(24);
+
+function setMe() {
+  const me = $('#me');
+  me.innerHTML = '';
+  if (session && state) {
+    const p = state.players.find((x) => x.id === session.pid);
+    me.append(h('b', {}, session.name), h('br'), p ? `${p.score}점 · ${p.rank}위` : '');
+  }
+}
+
+function showJoin(err) {
+  conn && conn.close();
+  conn = null;
+  const main = $('#main');
+  main.innerHTML = '';
+  const nameIn = h('input', { class: 'input', id: 'name', maxlength: 12, placeholder: '예: 김민지', autocomplete: 'nickname', enterkeyhint: 'go' });
+  const codeIn = h('input', { class: 'input', id: 'code', inputmode: 'numeric', maxlength: 4, placeholder: '4자리 숫자', value: roomCode, style: 'letter-spacing:.3em;text-align:center' });
+  const errEl = h('div', { class: 'err' }, err || '');
+  const btn = h('button', { class: 'btn', style: 'width:100%;font-size:20px;padding:18px' }, '참여하기');
+  const go = async () => {
+    const code = codeIn.value.replace(/\D/g, '');
+    const name = nameIn.value.trim();
+    if (code.length !== 4) { errEl.textContent = '방 번호 4자리를 넣어 주세요'; return codeIn.focus(); }
+    if (!name) { errEl.textContent = '이름을 넣어 주세요'; return nameIn.focus(); }
+    btn.disabled = true;
+    try {
+      const r = await post('/api/join', { room: code, name });
+      roomCode = code;
+      session = { pid: r.pid, name: r.name };
+      store('tp:p:' + code, session);
+      store('tp:lastRoom', code);
+      history.replaceState(null, '', '/?room=' + code);
+      start();
+    } catch (e) {
+      errEl.textContent = e.message;
+      btn.disabled = false;
+    }
+  };
+  btn.onclick = go;
+  nameIn.onkeydown = (e) => { if (e.key === 'Enter') go(); };
+  main.append(
+    h('div', { class: 'emoji pop' }, '🎉'),
+    h('div', { class: 'title' }, '이름만 넣고', h('br'), '바로 참여!'),
+    h('div', { class: 'sub' }, '모두 같은 답을 쓰면 점수가 올라가요.', h('br'), '남들이 쓸 것 같은 답을 맞혀 보세요!'),
+    h('div', { class: roomCode ? 'hidden' : '' }, h('label', {}, '방 번호'), codeIn),
+    h('div', {}, h('label', {}, '내 이름'), nameIn),
+    errEl,
+    btn,
+  );
+  setTimeout(() => (roomCode ? nameIn : codeIn).focus(), 50);
+  $('#me').innerHTML = '';
+}
+
+async function start() {
+  // 저장된 세션으로 재접속 확인
+  try {
+    const r = await post('/api/join', { room: roomCode, pid: session.pid });
+    session.name = r.name;
+    if (r.myAnswer) { myAnswer = r.myAnswer; }
+  } catch (e) {
+    store('tp:p:' + roomCode, null);
+    session = null;
+    return showJoin(e.message.includes('방') ? e.message : '');
+  }
+  conn && conn.close();
+  conn = connectRoom(roomCode, session.pid, onState, () => {
+    store('tp:p:' + roomCode, null);
+    store('tp:lastRoom', null);
+    session = null;
+    roomCode = '';
+    showJoin('게임 방이 닫혔어요. 방 번호를 다시 넣어 주세요');
+  });
+}
+
+function onState(st) {
+  const prevRound = state ? state.roundNo : null;
+  state = st;
+  if (!st.players.some((p) => p.id === session.pid)) {
+    store('tp:p:' + roomCode, null);
+    session = null;
+    return showJoin('진행자가 내보냈어요. 다시 입장해 주세요');
+  }
+  if (prevRound !== null && st.roundNo !== prevRound) { myAnswer = null; editing = false; draft = ''; }
+  render();
+}
+
+function render() {
+  const st = state;
+  const main = $('#main');
+  setMe();
+  clearInterval(tick);
+  // 입력 중이면 입력창 유지(포커스·글자 보존)
+  const activeInput = document.activeElement && document.activeElement.id === 'ans';
+  if (st.phase === 'asking' && activeInput && (!myAnswer || editing)) { updateTimer(); tick = setInterval(updateTimer, 250); return; }
+  main.innerHTML = '';
+
+  if (st.phase === 'lobby') {
+    main.append(
+      h('div', { class: 'emoji pop' }, '🙌'),
+      h('div', { class: 'title' }, '입장 완료!'),
+      h('div', { class: 'sub' }, h('b', { class: 'gold' }, session.name), ' 님, 반가워요.', h('br'), '진행자가 곧 첫 질문을 띄워요', h('span', { class: 'waiting-dots' })),
+      h('div', { class: 'card', style: 'text-align:center' }, h('div', { class: 'muted', style: 'font-size:14px' }, '지금 참여 중'), h('div', { style: 'font-size:40px;font-weight:900' }, st.players.length + '명')),
+    );
+    return;
+  }
+
+  const qHead = [h('div', { class: 'qno' }, `Q${st.roundNo}`), h('div', { class: 'q rise' }, st.question)];
+
+  if (st.phase === 'asking') {
+    const timerEl = h('div', { class: 'timer', id: 'timer' });
+    const barEl = h('div', { class: 'bar' }, h('i', { id: 'tbar' }));
+    if (!myAnswer || editing) {
+      const inp = h('input', { class: 'input', id: 'ans', maxlength: 30, placeholder: '남들도 쓸 것 같은 답', autocomplete: 'off', enterkeyhint: 'send', value: editing ? myAnswer : draft, style: 'font-size:24px;text-align:center' });
+      inp.oninput = () => { draft = inp.value; };
+      const btn = h('button', { class: 'btn', style: 'width:100%;font-size:20px;padding:18px' }, editing ? '다시 제출' : '제출하기');
+      const send = async () => {
+        const text = inp.value.trim();
+        if (!text) return toast('답을 입력해 주세요');
+        btn.disabled = true;
+        try {
+          const r = await post('/api/answer', { room: roomCode, pid: session.pid, text });
+          myAnswer = r.myAnswer; editing = false; draft = '';
+          inp.blur();
+          render();
+        } catch (e) { toast(e.message); btn.disabled = false; }
+      };
+      btn.onclick = send;
+      inp.onkeydown = (e) => { if (e.key === 'Enter' && !e.isComposing) send(); };
+      main.append(...qHead, timerEl, barEl, inp, btn, h('div', { class: 'sub', style: 'font-size:13px' }, '띄어쓰기·영문 대소문자는 달라도 같은 답으로 쳐요'));
+      if (!editing) setTimeout(() => inp.focus(), 50);
+    } else {
+      main.append(
+        ...qHead, timerEl, barEl,
+        h('div', { class: 'card mine pop' }, h('div', { class: 'muted' }, '내 답'), h('div', { class: 'ans' }, myAnswer), h('div', { class: 'gold', style: 'font-weight:800' }, '제출 완료 ✓')),
+        h('button', { class: 'btn ghost', onclick: () => { editing = true; render(); } }, '마감 전에 고치기'),
+        h('div', { class: 'sub' }, `${st.submitted.length} / ${st.players.length}명 제출`),
+      );
+    }
+    updateTimer();
+    tick = setInterval(updateTimer, 250);
+    return;
+  }
+
+  if (st.phase === 'closed') {
+    main.append(
+      ...qHead,
+      h('div', { class: 'card mine' }, h('div', { class: 'muted' }, '내 답'), h('div', { class: 'ans' }, myAnswer || '— (미제출)')),
+      h('div', { class: 'title', style: 'font-size:26px' }, '⏰ 마감!'),
+      h('div', { class: 'sub' }, '화면을 보세요! 결과 공개 중', h('span', { class: 'waiting-dots' })),
+    );
+    return;
+  }
+
+  if (st.phase === 'revealed') {
+    const g = (st.groups || []).find((x) => x.members.some((m) => m.id === session.pid));
+    const me = st.players.find((p) => p.id === session.pid);
+    const pts = st.roundPoints ? st.roundPoints[session.pid] || 0 : 0;
+    let msg;
+    if (!g) msg = h('div', { class: 'sub' }, '이번엔 답을 안 냈어요 😢');
+    else if (g.size >= 2) msg = h('div', { class: 'sub' }, h('b', { class: 'gold' }, `${g.size - 1}명`), '과 통했어요!');
+    else msg = h('div', { class: 'sub' }, '아무도 안 썼어요… 나만의 답 🥲');
+    main.append(
+      ...qHead,
+      h('div', { class: 'card mine pop' },
+        h('div', { class: 'muted' }, '내 답'),
+        h('div', { class: 'ans' }, g ? g.label : '—'),
+        h('div', { class: 'big-pts', style: `color:${pts ? 'var(--gold)' : 'var(--muted)'}` }, '+' + pts, h('small', {}, '점')),
+        msg,
+      ),
+      h('div', { class: 'stat' },
+        h('div', { class: 'card' }, h('b', {}, me.score), h('span', {}, '총점')),
+        h('div', { class: 'card' }, h('b', {}, me.rank + '위'), h('span', {}, `${st.players.length}명 중`)),
+      ),
+      h('div', { class: 'grps' },
+        h('div', { class: 'muted', style: 'font-size:13px;margin-left:4px' }, '많이 나온 답'),
+        (st.groups || []).filter((x) => x.size >= 2).slice(0, 5).map((x) =>
+          h('div', { class: 'grp' + (g && g.key === x.key ? ' me' : '') }, h('span', {}, x.label), h('span', { class: 'n' }, `${x.size}명`))),
+      ),
+    );
+    return;
+  }
+
+  if (st.phase === 'final') {
+    const me = st.players.find((p) => p.id === session.pid);
+    const medal = me.rank === 1 ? '🥇' : me.rank === 2 ? '🥈' : me.rank === 3 ? '🥉' : '🎊';
+    main.append(
+      h('div', { class: 'emoji pop' }, medal),
+      h('div', { class: 'title' }, '최종 ', h('span', { class: 'gold' }, me.rank + '위')),
+      h('div', { class: 'sub' }, `${st.players.length}명 중 · 총 ${me.score}점`),
+      h('div', { class: 'grps' },
+        st.players.slice(0, 5).map((p) => h('div', { class: 'grp' + (p.id === me.id ? ' me' : '') }, h('span', {}, `${p.rank}. ${p.name}`), h('span', { class: 'n' }, `${p.score}점`))),
+      ),
+      h('div', { class: 'sub' }, '함께해서 즐거웠어요! 올 한 해 수고 많으셨습니다 🎄'),
+    );
+  }
+}
+
+function updateTimer() {
+  const st = state;
+  const el = $('#timer');
+  const bar = $('#tbar');
+  if (!el) return;
+  if (!st.deadline) { el.textContent = '진행자가 마감할 때까지'; if (bar) bar.style.width = '100%'; return; }
+  const left = Math.max(0, st.deadline - (Date.now() + st.clockOffset));
+  const s = Math.ceil(left / 1000);
+  el.textContent = s > 0 ? `${s}초 남음` : '마감 중…';
+  el.classList.toggle('urgent', s <= 5);
+  if (bar) {
+    if (!bar.dataset.total) bar.dataset.total = String(Math.max(left, 1));
+    bar.style.width = Math.min(100, (left / Number(bar.dataset.total)) * 100) + '%';
+  }
+}
+
+if (session && roomCode) start();
+else showJoin();
+</script>
+</body>
+</html>

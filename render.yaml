@@ -1,0 +1,10 @@
+# Render.com 배포 설정 (통했다! 파티 실시간 서버)
+services:
+  - type: web
+    name: tonghaetda-party
+    runtime: node
+    rootDir: party
+    plan: free
+    buildCommand: "true"
+    startCommand: node server.js
+    healthCheckPath: /healthz
